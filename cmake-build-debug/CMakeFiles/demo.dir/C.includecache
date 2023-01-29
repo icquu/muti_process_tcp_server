@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/root/CLionProjects/demo/main.c
+stdio.h
+-
+netinet/in.h
+-
+strings.h
+-
+string.h
+-
+stdlib.h
+-
+zconf.h
+-
+signal.h
+-
+wait.h
+-
+arpa/inet.h
+-
+
