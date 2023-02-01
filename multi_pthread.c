@@ -50,15 +50,18 @@ void* p_fun(void *arg){
       printf("%c",plist[cfd%100].name[i]);
     }
     printf(" say's: %s", buf);
-#endif    
+#endif
+    char true_name[41]={'\0'};    
     for (int i=0;i<100;i++){
       if (plist[i].cfd>0 && plist[i].cfd != cfd){
-        write(plist[i].cfd,"----------------\n",17);
+        sprintf(true_name,"----------------\n");
         //write(plist[i].cfd,plist[cfd%100].name,16);
         for(int j=0;plist[cfd%100].name[j]!='\0' && plist[cfd%100].name[j]!='\n';j++){
-          write(plist[i].cfd,&plist[cfd%100].name[j],1);
+          //write(plist[i].cfd,&plist[cfd%100].name[j],1);
+          sprintf(true_name+17+j,"%c", plist[cfd%100].name[j]);
         }
-        write(plist[i].cfd, " say's: ", 8);
+        strcat(true_name, " say's: ");
+        write(plist[i].cfd, true_name, 41);
         write(plist[i].cfd,buf,BUFSIZ);
         write(plist[i].cfd,"----------------\n",17);
       }
