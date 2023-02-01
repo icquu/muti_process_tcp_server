@@ -8,7 +8,7 @@
 #include <strings.h>
 #include <arpa/inet.h>
 
-#define debug
+//#define debug
 
 typedef struct _person{
   int cfd;
@@ -30,7 +30,7 @@ void* p_fun(void *arg){
   read(cfd,plist[cfd%100].name,16);
 #ifdef debug
   printf("%d %s\n", cfd, plist[cfd%100].name); //打印当前会话id和人物昵称
-#enfif
+#endif
   char echo_buf[32]={'\0'};
   sprintf(echo_buf, "there're %d online\n", count); //讲当前在线人数写入echo_buf
   write(cfd, echo_buf, 32);
@@ -50,7 +50,7 @@ void* p_fun(void *arg){
       printf("%c",plist[cfd%100].name[i]);
     }
     printf(" say's: %s", buf);
-#enfif    
+#endif    
     for (int i=0;i<100;i++){
       if (plist[i].cfd>0 && plist[i].cfd != cfd){
         write(plist[i].cfd,"----------------\n",17);
