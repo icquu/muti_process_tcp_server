@@ -65,9 +65,30 @@ void* p_fun(void *arg){
     }
     memset(buf, '\0', BUFSIZ);
   }
+  //用户断开连接，通知在线用户谁退出了，打印当前在线人数和在线人昵称列表。
+  count--;
+  memset(echo_buf, '\0', 32);
+  sprintf(echo_buf, "there're %d online\n", count);
+  for (int i=0;i<100;i++){
+      if (plist[i].cfd>0 && plist[i].cfd != cfd){
+        write(plist[i].cfd,"----------------\n",17);
+        //write(plist[i].cfd,plist[cfd%100].name,16);
+        for(int j=0;plist[cfd%100].name[j]!='\0' && plist[cfd%100].name[j]!='\n';j++){
+          write(plist[i].cfd,&plist[cfd%100].name[j],1);
+        }
+        write(plist[i].cfd, " exit.\n", 7);
+        write(plist[i].cfd,"----------------\n",17);
+        write(plist[i].cfd, echo_buf, 32);
+        write(plist[i].cfd,"online person:\n",15);
+        for (int k=0; k<100; k++){
+          if (plist[k].name[0]!='\0' && strcmp(plist[cfd%100].name, plist[k].name))
+            write(plist[i].cfd, plist[k].name, 16);
+        }
+        write(plist[i].cfd,"----------------\n",17);
+      }
+    }
   plist[cfd%100].cfd = 0;
   memset(plist[cfd%100].name,'\0',16);
-  count--;
   return (void*)0;
 }
 
