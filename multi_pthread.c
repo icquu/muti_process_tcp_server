@@ -65,6 +65,7 @@ void* p_fun(void *arg){
     }
     memset(buf, '\0', BUFSIZ);
   }
+  close(cfd); //关闭socket描述符。
   //用户断开连接，通知在线用户谁退出了，打印当前在线人数和在线人昵称列表。
   count--;
   memset(echo_buf, '\0', 32);
