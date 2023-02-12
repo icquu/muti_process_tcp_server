@@ -63,12 +63,12 @@ int main(int argc, char *argv[])
 			{
 				if ((event->mask >> i) & 1)
 				{
-					if (event->len > 0)
-						if (i==8)
-						fprintf(stdout, "%s\n", event->name);
-				//		fprintf(stdout, "%s --- %s\n", event->name, event_str[i]);
+					if (event->len > 0 && event->name!=NULL && i==3){
+						fprintf(stdout, "%s --- %s --- %d\n", event->name, event_str[i], i);
+						fflush(stdout);
+					}
 				//	else
-				//		fprintf(stdout, "%s --- %s\n", " ", event_str[i]);
+				//		fprintf(stdout, "%s --- %s --- %d\n", event->name, event_str[i], i);
 				}
 			}
 			nread = nread + sizeof(struct inotify_event) + event->len;
