@@ -23,12 +23,12 @@ int c(void){
 int main(int argc, char **argv){
 	printf("%s():Begin.\n", __FUNCTION__);
 	printf("%s():Call c().\n", __FUNCTION__);
-	c();
 	printf("%s():c() returned.\n", __FUNCTION__);
 
   int ret = setjmp(save);
   if (ret ==0){
     printf("make a longjmp savepoint\n");
+   	c();
   }else{
     printf("main function ended.\n");
   }
