@@ -1,0 +1,40 @@
+NFS : Configure NFS Server2021/08/25
+https://www.server-world.info/en/note?os=Debian_11&p=nfs&f=1
+ 	
+Configure NFS Server to share directories on your Network.
+This example is based on the environment like follows.
++----------------------+          |          +----------------------+
+| [    NFS Server    ] |10.0.0.30 | 10.0.0.51| [    NFS Client    ] |
+|     dlp.srv.world    +----------+----------+   node01.srv.world   |
+|                      |                     |                      |
++----------------------+                     +----------------------+
+
+[1]	Configure NFS Server.
+root@dlp:~# apt -y install nfs-kernel-server
+root@dlp:~# vi /etc/idmapd.conf
+# line 6 : uncomment and change to your domain name
+Domain = srv.world
+root@dlp:~# vi /etc/exports
+# write settings for NFS exports
+# for example, set [/home/nfsshare] as NFS share
+/home/nfsshare 10.0.0.0/24(rw,no_root_squash)
+root@dlp:~# mkdir /home/nfsshare
+root@dlp:~# systemctl restart nfs-server
+For basic options of exports
+Option	Description
+rw			Allow both read and write requests on a NFS volume.
+ro			Allow only read requests on a NFS volume.
+sync			Reply to requests only after the changes have been committed to stable storage. (Default)
+async			This option allows the NFS server to violate the NFS protocol and reply to requests before any changes made by that request have been committed to stable storage.
+secure			This option requires that requests originate on an Internet port less than IPPORT_RESERVED (1024). (Default)
+insecure			This option accepts all ports.
+wdelay			Delay committing a write request to disc slightly if it suspects that another related write request may be in progress or may arrive soon. (Default)
+no_wdelay			This option has no effect if async is also set. The NFS server will normally delay committing a write request to disc slightly if it suspects that another related write request may be in progress or may arrive soon. This allows multiple write requests to be committed to disc with the one operation which can improve performance. If an NFS server received mainly small unrelated requests, this behaviour could actually reduce performance, so no_wdelay is available to turn it off.
+subtree_check			This option enables subtree checking. (Default)
+no_subtree_check			This option disables subtree checking, which has mild security implications, but can improve reliability in some circumstances.
+root_squash			Map requests from uid/gid 0 to the anonymous uid/gid. Note that this does not apply to any other uids or gids that might be equally sensitive, such as user bin or group staff.
+no_root_squash			Turn off root squashing. This option is mainly useful for disk-less clients.
+all_squash			Map all uids and gids to the anonymous user. Useful for NFS exported public FTP directories, news spool directories, etc.
+no_all_squash			Turn off all squashing. (Default)
+anonuid=UID			These options explicitly set the uid and gid of the anonymous account. This option is primarily useful for PC/NFS clients, where you might want all requests appear to be from one user. As an example, consider the export entry for /home/joe in the example section below, which maps all requests to uid 150.
+anongid=GID			Read above (anonuid=UID)
