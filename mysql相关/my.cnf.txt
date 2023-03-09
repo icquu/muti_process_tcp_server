@@ -1,6 +1,13 @@
 [mysqld]
+#percona_mysql_variables
+binlog_space_limit = 5G
+max_slowlog_size = 256M
+max_slowlog_files = 4
+innodb_numa_interleave = ON
+
 user	= mysql
 port	= 3306
+mysqlx	= OFF
 
 server_id = 3306
 datadir	= /var/lib/mysql
@@ -13,6 +20,10 @@ default_time_zone = "+8:00"
 #启用admin_port，连接数爆满等紧急情况下给管理员留个后门
 admin_address = '127.0.0.1'
 admin_port = 33062
+explicit_defaults_for_timestamp = 1
+max_prepared_stmt_count = 1048576
+sql_mode = STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
+activate_all_roles_on_login = ON
 
 #performance setttings
 lock_wait_timeout = 360
@@ -47,14 +58,16 @@ log_throttle_queries_not_using_indexes = 60
 min_examined_row_limit = 100
 log_slow_admin_statements = 1
 log_slow_slave_statements = 1
-log_bin = /var/lib/mysql/mybinlog
-binlog_format = ROW
+log_bin = /var/lib/mysql/mybinlog	  # MySQL8之后二进制默认开启，如需关闭使用disable_log_bin。
+binlog_format = ROW 	#STATEMENT MIXED
+binlog_row_image=minimal 	#full noblob
+binlog_rows_query_log_events = 1
+binlog_expire_logs_seconds = 259200
 sync_binlog = 16 #MGR环境中由其他节点提供容错性，可不设置双1以提高本地节点性能
 binlog_cache_size = 4M
 max_binlog_cache_size = 2G
 max_binlog_size = 1G
-binlog_rows_query_log_events = 1
-binlog_expire_logs_seconds = 259200
+
 #MySQL 8.0.22前，想启用MGR的话，需要设置binlog_checksum=NONE才行
 binlog_checksum = CRC32
 gtid_mode = ON
@@ -78,7 +91,7 @@ replication_sender_observe_commit_only = ON
 skip_slave_start
 
 #innodb settings
-transaction_isolation = REPEATABLE-READ
+transaction_isolation = REPEATABLE-READ  #READ-COMMITTED 
 innodb_buffer_pool_size = 4G
 innodb_buffer_pool_instances = 4
 innodb_data_file_path = ibdata1:12M:autoextend
