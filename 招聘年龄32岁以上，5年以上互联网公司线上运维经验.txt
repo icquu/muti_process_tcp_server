@@ -4,7 +4,7 @@
 有城市工作生活经历，对个人技术标准有较高要求，5年以上互联网公司线上项目运维经验。
 
 1.要求有涉猎广泛的运维领域，经验丰富；
-2.具备分析处理涉及接近底层计算机原理和程序的问题(能够通过排查日志找出问题所在，如果能够阅读源码调试更佳)，对ARP,TCP,UDP,HTTP,HTTPS,DNS,DHCP,TFTP,FTP,NFS,SAMBA等网络层和应用层协议比较了解，具备较强的网络故障分析能力；(涉及到的工具可能有：pstack pmap strace tcpdump tshark top htop iotop iostat pidstat等)
+2.具备分析处理涉及接近底层计算机原理和程序的问题(能够通过排查日志找出问题所在，如果能够阅读源码调试更佳)，对ARP,TCP,UDP,HTTP,ICMP,IGMP,HTTPS,DNS,DHCP,TFTP,FTP,NFS,SAMBA等传输层，网络层和应用层协议比较了解，具备较强的网络故障分析能力；(涉及到的工具可能有：pstack pmap strace tcpdump tshark top htop iotop iostat pidstat等)
 3.要求常规工作使用自动化工具完成，其它场景尽可能使用自动化方式完成工作；(可能用到的工具：shell ansible puppet saltstack)
 4.要求熟悉使用git对文档和软件工程进行版本控制，适当展示个人技术积累的方式或自己的博客和原创文章；(技术积累和科学的知识和工程管理能力)
 5.要求在工作中挖掘运维架构存在的问题，主动完善，积极发现并提出问题，有计划的组织讨论，制定解决方案，留下关键技术文档纳入版本控制；(是否重视技术积累和具备科学的知识管理和工程管理能力)
