@@ -1,0 +1,15 @@
+Debian交互方式设置时区
+dpkg-reconfigure tzdata
+
+Debian软件包流行度调查开关
+dpkg-reconfigure popularity-contest
+
+
+手动添加映射的方法:
+microk8s kubectl port-forward -n kube-system service/kubernetes-dashboard --address 0.0.0.0 10443:443
+
+参考文章搭建microk8s集群:
+https://www.server-world.info/en/note?os=Debian_11&p=microk8s&f=1
+
+参考文章对集群进行微调和管理:
+https://www.bboy.app/2020/01/19/microk8s%E5%88%9D%E4%BD%93%E9%AA%8C/

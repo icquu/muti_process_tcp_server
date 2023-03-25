@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/kali/CLionProjects/bindshell/main.c
+stdio.h
+-
+sys/socket.h
+-
+stdlib.h
+-
+unistd.h
+-
+netinet/in.h
+-
+string.h
+-
+signal.h
+-
+bits/signum-arch.h
+-
+sys/wait.h
+-
+

@@ -1,0 +1,22 @@
+OpenBSD安装桌面:
+首先使用交互式的安装界面完成系统安装
+
+进入系统后:
+pkg_add -iv xfce
+pkg_add -iv slim slim-themes
+
+创建配置文件:
+vi .xinitrc
+添加一行:
+exec startxfce4
+
+vi /etc/rc.local
+添加一行:
+/usr/local/bin/slim -d
+
+vi /etc/rc.conf.local
+添加:
+pkg_scripts="dbus_daemon avani_daemon"
+dbus_enable=YES
+
+重启即可.

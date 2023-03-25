@@ -1,0 +1,5 @@
+hack原理:
+Wireless Access with Bettercap on Kali Linux(Cybersecurity)
+https://www.youtube.com/watch?v=6oZsqMqr_vc
+
+配置WiFi进入混杂模式，获取完整的握手包，然后进行爆破。

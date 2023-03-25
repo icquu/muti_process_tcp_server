@@ -1,0 +1,16 @@
+又一个搜索技术文章的好站，内容丰富：
+https://www.tecmint.com/?s=csf
+
+./my2sql  -user root -password DyR10ucTlC1uvS3-  -port 3306 \
+-databases fpd_lmb_site \
+-big-trx-row-limit 5 -long-trx-seconds 3 \
+-work-type stats   -start-file /var/lib/mysql/binlog.000469 \
+-start-datetime "2022-03-03 12:50:00" --stop-datetime "2022-03-03 13:05:00" \
+-output-dir tmpdir/
+
+./my2sql  -user root -password DyR10ucTlC1uvS3- -host 127.0.0.1   -port 3306  -mode repl -work-type stats  -start-file binlog.000469  -start-datetime "2022-03-03 12:50:00" --stop-datetime "2022-03-03 13:05:00"  -big-trx-row-limit 5 -long-trx-seconds 3   -output-dir ./tmpdir
+
+#伪装成从库解析binlog
+./my2sql  -user root -password xxxx -host 127.0.0.1   -port 3306  -mode repl -work-type stats  -start-file mysql-bin.011259  -start-datetime "2020-07-16 10:20:00" -stop-datetime "2020-07-16 11:00:00"  -big-trx-row-limit 500 -long-trx-seconds 300   -output-dir ./tmpdir
+#直接读取binlog文件解析
+./my2sql  -user root -password DyR10ucTlC1uvS3- -host 127.0.0.1   -port 3306 -mode file -local-binlog-file /var/lib/mysql/binlog.000469   -work-type stats  -start-file binlog.000469 -big-trx-row-limit 5 -long-trx-seconds 1   -output-dir ./tmpdir

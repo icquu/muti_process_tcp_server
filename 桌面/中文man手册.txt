@@ -1,0 +1,134 @@
+中文man手册：
+https://github.com/man-pages-zh/manpages-zh
+
+htons
+htonl
+ntohs
+ntohl
+
+#include <stdio.h>
+
+int main(void)
+{
+	unsigned int ip;
+	unsigned char *p=(unsigned char*)&ip;
+	*p=1;
+	p++;
+	*p=0;
+	p++;
+	*p=168;
+	p++;
+	*p=192;
+	printf("%u\n", ip);
+	return 0;
+}
+
+int inet_aton(const char *cp, struct in_addr *inp);
+将一个字符串IP地址转换为一个32位的网络字节序地址。
+
+char *inet_ntoa(struct in_addr in);
+网络字节序转换成字符串IP。
+
+in_addr_t inet_addr(const char *ip);
+字符串IP，返回网络字节序的ip。
+
+内核会为listen状态维护两个队列：不完全连接请求队列（SYN_RECV状态)和等待accept建立socket的队列（ESTABBLISHED状态）
+不完全连接队列的长度可以使用/proc/sys/net/ipv4/tcp_max_syn_backlog设置。缺省值是128
+
+注意网络字节序，要进行必要的转换。
+
+send函数在网络发送缓存满了之后也会阻塞，Linux内核参数中有关于网络发送和接收缓冲区的设置
+
+TCP报文的分包和粘包的示例
+
+职业程序员的编程方法（使用封装好的轮子）：
+可以采用freecplus框架的CTcpServer类实现socket通信。https://freecplus.net
+
+下载完成后，解压，使用，该框架包含的内容基本涵盖了系统编程的各个方面。
+
+readN，writeN的思想，读取或发送未完成的字节数就阻塞在那里。
+使用报文长度+报文内容的方式解决Tcp的分包和粘包问题。
+
+多进程基础知识：
+属于Linux环境编程的内容
+
+while循环中加入一句：
+if(fork()) continue;
+... //子进程逻辑处理代码
+
+为了回收子进程，注册一个信号处理函数：
+signal(SIGCHLD, SIG_IGN);
+
+关闭多余的socket文件描述符，释放不必要占用的资源。
+主进程关闭connfd，子进程关闭listenfd。
+
+进程退出后，资源释放：
+先忽略所有信号
+for(int i=0; i<=64; i++){
+	signal(i,SIG_IGN);
+}
+
+子进程退出信号：
+signal(SIGINT, CHLDEXIT);signal(SIGTERM,CHLDEXIT);
+
+子进程退出函数，不通知其他进程。
+父进程退出函数，会通知其他进程退出。
+
+void ChldEXIT(int sig){
+	if (sig > 0){
+		signal(sig, SIG_IGN);
+		signal(SIGINT,SIG_IGN);
+		signal(SIGTERM,SIG_IGN);
+	}
+	printf("子进程退出。\n");
+	// 编写善后代码（释放资源、提交或回滚事务）
+	TcpServer.CloseClient();
+	kill(0,15); //这行代码是父进程退出函数特有的，通知子进程退出。
+	exit(0);
+}
+
+日志记录:
+多进程写日志文件可能会出现争抢，可以加锁，比如用信号量。
+
+添加业务：
+比如，身份认证，业务报文的格式自定义
+
+添加心跳机制：
+如果客户端与服务端采用长连接，在连接空闲时，客户端每若干秒向服务端发送一个心跳报文，服务端也回复一个心跳报文，确认连接继续生效中。
+如果服务端在约定的时间内没有收到客户端的任何报文，则认为客户端已掉线，就主动断开连接，释放资源。
+心跳报文建议在60秒内，不要超过120秒。
+
+多线程网络通讯程序的退出函数：
+void *pthmain(void *arg)
+{
+	pthread_cleanup_push(pthmainexit,arg); //设置线程清理函数
+
+	pthread_detach(pthread_self()); //设置线程分离。
+
+	pthread_setcanceltype(PTHREAD_CANCEL_DISABLE,NULL); // 设置取消方式为立即取消。
+}
+
+void mainexit(int sig)
+{
+	logfile.Write("mainexit begin.\n");
+
+	// 关闭监听的socket。
+	TcpServer.CloseListen();
+
+	// 取消全部的线程。
+	for(int i=0; i<vpthid.size();i++)
+	{
+		logfile.Write("cancel %ld\n", vpthid[i]);
+		pthread_cancel(vpthid[i]);
+	}
+
+	logfiel.Write("mainexit end.\n");
+
+	exit(0);
+}
+
+性能测试的重要性(面试中很重要，几乎一定会用到)：
+并发量，业务量，带宽
+
+运维问题的解决 更多时候是需要有思路，思路大于技能，真正解决问题的是思路，工具只是具体实现，是对思路的填充和描述，工具和设置都可以临时学，工具的更新换代很快，没有必要把过多的精力投入进去，通过了解现有场景下各种工具的使用，了解到使用这些工具解决问题的思路才是核心，思路是慢工，需要积累，好的解决思路难能可贵，好的解决思路才能把工具用活用好。
+这点和软件开发非常类似，软件设计才是灵魂，代码实现大部分都是体力活。

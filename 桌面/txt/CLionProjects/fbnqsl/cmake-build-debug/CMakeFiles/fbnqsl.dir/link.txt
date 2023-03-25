@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/fbnqsl.dir/main.c.o  -o fbnqsl 

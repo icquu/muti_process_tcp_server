@@ -1,0 +1,64 @@
+视图名称：用view关键字定义一个视图，并给它一个名称，如view “china”。
+匹配条件：用match-clients关键字定义一个匹配条件，可以是一个IP地址、一个网段、一个ACL（访问控制列表）等，如match-clients { 192.168.0.0/24; }。
+
+options {
+    directory "/var/named";
+    version "bind 9.11";
+    allow-query { any; };
+    allow-recursion { any; };
+};
+
+acl cn {
+    1.80.0.0/13;
+    1.92.0.0/14;
+    1.180.0.0/14;
+    ...
+};
+
+acl us {
+    3.0.0.0/8;
+    4.0.0.0/8;
+    5.0.0.0/8;
+    ...
+};
+
+view "china" {
+    match-clients { cn; };
+    zone "example.com" {
+        type master;
+        file "/var/named/china.example.com.zone";
+    };
+};
+
+view "usa" {
+    match-clients { us; };
+    zone "example.com" {
+        type master;
+        file "/var/named/usa.example.com.zone";
+    };
+};
+
+zone "example.com" {
+    type master;
+    file "/var/named/example.com.zone";
+};
+
+
+这个示例定义了两个视图china和usa，分别匹配来自中国和美国的客户端，并指定不同的区域文件。如果没有匹配到任何视图，则使用默认的区域文件。每个区域文件中可以定义不同的解析记录，例如：
+$TTL 86400
+@   IN  SOA ns1.example.com. admin.example.com. (
+            2021031801 ; serial
+            3600       ; refresh
+            900        ; retry
+            604800     ; expire
+            86400 )    ; minimum
+
+@   IN  NS  ns1.example.com.
+@   IN  NS  ns2.example.com.
+
+ns1 IN  A   192.168.0.1
+ns2 IN  A   192.168.0.2
+
+www IN  A   192.168.0.3
+mail IN CNAME www
+ftp IN CNAME www

@@ -1,0 +1,36 @@
+pidstat例子
+1. 列出IO统计信息：-d
+
+2. 列出内存使用统计，page fault：-r
+
+3. CPU统计信息：-u
+
+4. 上下文切换统计信息：-w
+
+5. 指定输出的维度
+
+指定命令： -C command
+
+指定进程号：-p { pid [,...] | SELF | ALL }
+
+将所有列输出到单行、便于导入单张表中：-h
+
+按每个CPU核的统计：-I
+
+按所有CPU核统计：默认
+
+列出命令的完整内容，包括参数：-l
+
+列出线程统计信息：-t
+
+按进程维度单独统计、按进程全局+子进程单独统计、按进程全局、单独统计同时按子任务单独统计：-T { TASK | CHILD | ALL }
+
+实例，统计5秒的值并输出
+
+pidstat -d -r -u -w -l -h -p ALL 5 1|less  
+
+pidstat -t -d -r -u -w -l -h -p `pidof mysqld`
+
+pidstat -t -d -r -u -w -h -p `pidof mysqld`
+
+pidstat -t -d -r -u -w -h -p `pidof mysqld`| grep -v connection| column -t -o ',' > pid.csv

@@ -1,0 +1,23 @@
+sysbench
+sysbench --mysql-host=127.0.0.1          --mysql-port=3306          --mysql-user=fbd          --mysql-password=DyR10ucTlC1uvS3-          /usr/share/sysbench/oltp_common.lua          --tables=10          --table_size=100000          prepare
+
+sysbench --threads=4 \
+         --time=20 \
+         --report-interval=5 \
+         --mysql-host=127.0.0.1 \
+         --mysql-port=3306 \
+         --mysql-user=fbd \
+         --mysql-password=DyR10ucTlC1uvS3- \
+         /usr/share/sysbench/oltp_read_write.lua \
+         --tables=10 \
+         --table_size=100000 \
+         run
+
+4h8G
+4线程读qps:29318.85
+4线程写qps:17610.80    26189.97
+
+sysbench --threads=4          --time=20          --report-interval=5          --mysql-host=127.0.0.1          --mysql-port=3306          --mysql-user=root         /usr/share/sysbench/oltp_read_only.lua          --tables=10          --table_size=100000          run
+
+Redis 16C 128G 集群版（单副本），提供 1280000 QPS
+Redis 1C 1GB 主从版，提供 80000 QPS

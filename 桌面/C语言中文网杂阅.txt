@@ -1,0 +1,238 @@
+
+你在路由上show run | sec ip nat
+ip nat inside source static 172.16.41.33 179.248.235.28
+ip nat inside source static 172.16.41.18 179.248.235.134
+ip nat inside source static 172.16.41.19 179.248.235.135
+ip nat inside source static 172.16.41.25 179.248.235.136
+ip nat inside source static 172.16.41.26 179.248.235.137
+administrator eF5H6VKxaLs1zp5r
+mr.x94.cc
+f6kkaMOJ
+cdnbest
+user2@gmail.com
+8i3df%ZOX$38
+yum install https://repo.percona.com/yum/percona-release-latest.noarch.rpm -y
+percona-release enable psmdb-44 release
+yum install percona-server-mongodb -y
+systemctl enable mongod
+systemctl stop mongod
+sed -i 's/replication:/#replication:/' /etc/mongod.conf
+sed -i 's/replSetName/#replSetName/' /etc/mongod.conf
+sed -i 's/keyFile/#keyFile/' /etc/mongod.conf
+sed -i 's/authorization: disabled/authorization: enabled/' /etc/mongod.conf
+systemctl restart mongod
+-------------------------------
+
+
+潜 现 
+漏桶
+令牌桶
+任务池
+
+Shell + 系统编程
+tmux list-sessions
+
+scanf()、gets() 在读取字符串时会忽略换行符，不会把换行符作为字符串的内容。
+只有当控制字符串以格式控制符开头时，才会忽略换行符
+
+清空输出缓冲区
+fflush(stdout);
+
+清空输入缓冲区
+int c;
+while((c = getchar()) != '\n' && c != EOF);
+
+使用 scanf() 清空缓冲区
+scanf("%*[^\n]"); scanf("%*c");
+
+scanf() 也有类似的用法，也可以在格式控制符的中间加一个数字，用来表示读取数据的最大长度，例如：
+%2d表示最多读取两位整数；
+%10s表示读取的字符串的最大长度为 10，或者说，最多读取 10 个字符。
+
+
+2) 匹配特定的字符
+%s 控制符会匹配除空白符以外的所有字符，它有两个缺点：
+%s 不能读取特定的字符，比如只想读取小写字母，或者十进制数字等，%s 就无能为力；
+%s 读取到的字符串中不能包含空白符，有些情况会比较尴尬，例如，无法将多个单词存放到一个字符串中，因为单词之间就是以空格为分隔的，%s 遇到空格就读取结束了。
+
+要想解决以上问题，可以使用 scanf() 的另外一种字符匹配方式，就是%[xxx]，[ ]包围起来的是需要读取的字符集合。例如，%[abcd]表示只读取字符abcd，遇到其它的字符就读取结束；注意，这里并不强调字符的顺序，只要字符在 abcd 范围内都可以匹配成功，所以你可以输入 abcd、dcba、ccdc、bdcca 等。
+
+常用的连字符举例：
+%[a-z]表示读取 abc...xyz 范围内的字符，也即小写字母；
+%[A-Z]表示读取 ABC...XYZ 范围内的字符，也即大写字母；
+%[0-9]表示读取 012...789 范围内的字符，也即十进制数字。
+你也可以将它们合并起来，例如：
+%[a-zA-Z]表示读取大写字母和小写字母，也即所有英文字母；
+%[a-z-A-Z0-9]表示读取所有的英文字母和十进制数字；
+%[0-9a-f]表示读取十六进制数字。
+
+不匹配某些字符
+%[^\n]表示匹配除换行符以外的所有字符，遇到换行符就停止读取；
+%[^0-9]表示匹配除十进制数字以外的所有字符，遇到十进制数字就停止读取。
+
+#include <stdio.h>
+int main(){
+    char str1[30], str2[30];
+    scanf("%[^0-9]", str1);
+    scanf("%*[^\n]"); scanf("%*c");  //清空缓冲区
+    scanf("%[^\n]", str2);
+    printf("str1=%s \nstr2=%s\n", str1, str2);
+    return 0;
+}
+
+丢弃读取到的字符
+在前面的代码中，每个格式控制符都要对应一个变量，把读取到的数据放入对应的变量中。其实你也可以不这样做，scanf() 允许把读取到的数据直接丢弃，不往变量中存放，具体方法就是在 % 后面加一个*，例如：
+%*d表示读取一个整数并丢弃；
+%*[a-z]表示读取小写字母并丢弃；
+%*[^\n]表示将换行符以外的字符全部丢弃。
+
+#include <stdio.h>
+int main(){
+    int n;
+    char str[30];
+    scanf("%*d %d", &n);
+    scanf("%*[a-z]");
+    scanf("%[^\n]", str);
+    printf("n=%d, str=%s\n", n, str);
+    return 0;
+}
+
+总结
+scanf() 控制字符串的完整写法为：
+%{*} {width} type
+
+其中，{ } 表示可有可无。各个部分的具体含义是：
+type表示读取什么类型的数据，例如 %d、%s、%[a-z]、%[^\n] 等；type 必须有。
+width表示最大读取宽度，可有可无。
+*表示丢弃读取到的数据，可有可无
+
+
+我们完全可以模拟密码输入的效果，请先看下面的代码：
+#include <stdio.h>
+#include <ctype.h>
+#define PWDLEN 20
+void getpwd(char *pwd, int pwdlen);
+int main(){
+    char pwd[PWDLEN+1];
+    printf("Input password: ");
+    getpwd(pwd, PWDLEN);
+    printf("The password is: %s\n", pwd);
+    return 0;
+}
+/**
+* 获取用户输入的密码
+* @param  pwd     char*  保存密码的内存的首地址
+* @param  pwdlen  int    密码的最大长度
+**/
+void getpwd(char *pwd, int pwdlen){
+    char ch = 0;
+    int i = 0;
+    while(i<pwdlen){
+        ch = getchar();
+        if(ch == '\r'){  //回车结束输入
+            printf("\n");
+            break;
+        }
+       
+        if(ch=='\b' && i>0){  //按下删除键
+            i--;
+            printf("\b \b");
+        }else if(isprint(ch)){  //输入可打印字符
+            pwd[i] = ch;
+            printf("*");
+            i++;
+        }
+    }
+    pwd[i] = 0;
+}
+
+小游戏中一般采用非阻塞式键盘监听：用户输入数据后程序可以捕获，用户不输入数据程序也可以继续执行。
+在 Windows 系统中，conio.h头文件中的kbhit()函数就可以用来实现非阻塞式键盘监听。
+
+Python如何调用C程序
+
+我们先写一个简单的C语言程序，其接受和返回的值均为int类型：
+
+#include <stdio.h>
+
+int add(int a, int b)
+{
+    printf("receive parameters from python\n");
+    return a+b;
+}
+接着我们使用gcc生成动态库：
+
+gcc -o add.so -shared -fPIC add.c
+
+-f后面跟一些编译选项，PIC是其中一种，表示生成位置无关代码（Position Independent Code）。动态库在程序编译时并不会被连接到目标代码中，而是在程序运行是才被载入。
+
+我们在python中使用ctypes载入动态库。
+
+>>> from ctypes import *
+>>> lib= cdll.LoadLibrary("add.so")
+>>> print(lib.add(1, 2))
+receive parameters from python
+3
+如果参数是int型的变量，我们可以直接传入和接收C程序的参数，不需要做任何额外的处理，但当参数比较复杂时，就会出现问题。
+
+Shell declare和typeset命令：设置变量属性
+declare [+/-] [aAfFgilprtux] [变量名=变量值]
+
+-f [name]	列出之前由用户在脚本中定义的函数名称和函数体。
+-F [name]	仅列出自定义函数名称。
+-g name		在 Shell 函数内部创建全局变量。
+-p [name]	显示指定变量的属性和值。
+-a name		声明变量为普通数组。
+-A name		声明变量为关联数组（支持索引下标为字符串）。
+-i name 	将变量定义为整数型。
+-r name[=value] 将变量定义为只读（不可修改和删除），等价于 readonly name。
+-x name[=value]	将变量设置为环境变量，等价于 export name[=value]。
+
+数据结构：
+二分查找
+三分查找
+哈希函数
+冲突处理：
+1.拉链法
+2.
+3.
+4.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct _node{
+	char *str;
+	struct _node *next;	
+} Node;
+
+typedef struct _hashtable{
+	Node **data;
+	int size;
+} HashTable;
+
+Node* init_node(char *str, Node *head){
+	Node* p = (Node*)malloc(sizeof(Node));
+	p->str = strdup(str);
+	p->next = head;
+	return p;
+}
+
+
+int main(){
+	return 0;
+}
+
+
+字符串匹配算法：
+逐字节匹配
+kmp算法
+sunday算法
+
+认可是很珍贵的奖励
+麦克阿瑟天才奖 非常有价值的奖励，因为它是因为一个想法，方向而获奖。而不是功成名就。
+科研评价，奖励体系，让大家都具备鉴赏能力。
+
+C语言中的时间获取，转换和格式化输出。
+int gettimeofday(struct timeval *);

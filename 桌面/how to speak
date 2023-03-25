@@ -1,0 +1,80 @@
+how to speak
+知识,用这个知识做了多少练习
+开始说话的最好方式是:给出承诺promise.
+重复的围绕一个事情和目的去阐述
+建设性的
+吃过饭
+地点(光线充足)
+语速
+身体姿态
+使用道具
+最后可以给个joke,thank you不是最好的选项
+
+
+boring 无聊
+magnificent book 很棒的书
+before there were copying machines and computers 在复印机和电脑出现之前
+this memorable thing is what I remember about the play 这件令人难忘的事就是我对这出戏的记忆
+stock ways to end things 常用的结束方法
+
+知道自己在做什么
+你的不同在于你的专注和兴趣和别人的不同,这些不同就是你的天赋.而求同只是为了生存
+乔布斯就是个拥有设计师灵感的人
+
+proxmox
+TrueNAS CORE
+
+Ubuntu server:
+sudo apt install unattended-upgrades
+sudo dpkg-reconfigure --priority= low unattended-upgrades
+cd /etc/apt/apt.conf.d/
+ls
+cat 20auto-upgrades
+less 50unattended-upgrades
+sudo unattended-upgrades --dry-run --debug
+
+
+ssh-keygen -b 4096 -C "christian.lempa@clcreative.de"
+sudo ufw allow 22
+sudo ufw enable
+sudo ufw status
+
+用药如用兵,需有胆有识.
+天下糜烂,百姓从贼,皆因饥饿,百姓饥饿,皆因无地可耕,得人心者得天下,你们知道什么是人心吗,人心,就是粮食,就是源源不断的后备兵源.就是屡败屡战的资本.
+你觉得大明气数已尽了吗:
+黄帝内经有云:"不治已病治未病,不治已乱治未乱",历朝历代,皆是始兴终衰,其中道理,又可以为皆是驭世之术,轻经世之道.如此,积弊已久,非一味猛药就可痊愈.
+有时候做一件事情看起来没有什么现实的意义,但它的意义可能作用在未来的某个时刻,但在未来的那个时刻去做现在看起来没有意义的这件事情,是根本来不及的.这就是"厚积薄发"的真正意义.
+
+新风系统:250AD3(台达电)
+防水工程
+半浆砌砖
+全浆砌砖
+
+因为你给不了一个男人慰籍,只会伤害他.
+
+口子窖
+听说太理想的一切都无法接触,我再置身寂寞路途,在哪里会有幸福,听说太理想的恋爱,总不可接触,我却哪管千山走遍,亦要设法去捕捉
+
+伍佰:
+挪威的森林
+浪人情歌
+梦醒时分
+突然间的自我
+孤星泪
+世界第一等
+如果这都不算爱
+被动
+一朵金花
+单行道
+两个人的圣经
+我会好好地
+痛苦的人
+你是我的花朵
+
+李宗盛:
+爱如潮水
+最近比较烦
+
+
+
+今天是2022/6/1儿童节,爱情里的这些那些.两个人的相处模式是慢慢形成的,至于谁做什么,谁多谁少,都是表象,没有只索取不付出的爱情,两个人只要都得到了幸福感,就是好的相处模式.

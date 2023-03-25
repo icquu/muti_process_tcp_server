@@ -1,0 +1,97 @@
+基于rsync方式的文件备份
+ rsync 是一个快速增量文件传输工具，它可以用于在同一主机备份内部的备分，我们还可以把它作为不同主机网络备份工具之用。本文主要讲述的是如何自架rsync服 务器，以实现文件传输、备份和镜像。相对tar和wget来说，rsync 也有其自身的优点，比如速度快、安全、高效；
+ 
+
+rsync同步模式:
+　　sync在进行同步或备份时，使用远程shell，或TCP连接远程daemon，有两种途经连接远程主机。
+　　shell模式，不需要使用配置文件，也不需要启动远端rsync。远程传输时一般使用ssh作为传输工具。
+　　daemon模式，但必须在一台机器上启动rsync。
+
+ 
+
+ rsync命令是一个远程数据同步工具，可通过LAN/WAN快速同步多台主机间的文件。rsync使用所谓的“rsync算法”来使本地和远程两个主机之间的文件达到同步，这个算法只传送两个文件的不同部分，而不是每次都整份传送，因此速度相当快。 rsync是一个功能非常强大的工具，其命令也有很多功能特色选项，我们下面就对它的选项一一进行分析说明。
+ 
+
+特性：
+能更新整个目录
+有选择性的保持符号链链、硬链接、文件属于、权限、设备以及时间等；
+对于安装来说，无任何特殊权限要求；
+对于多个文件来说，内部流水线减少文件等待的延时；
+能用rsh、ssh 或直接端口做为传输入端口；
+支持匿名rsync 同步文件，是理想的镜像工具；
+ 
+
+http://man.linuxde.net/rsync  　　　　rsync命令
+
+http://www.cnblogs.com/mchina/p/2829944.html   安装rsync可参考
+
+http://www.ttlsa.com/web/let-infotify-rsync-fast/       　　 真正的inotify+rsync实时同步 彻底告别同步慢 
+
+ 
+
+1. 基于rsync方式，需要传输多个文件时　　
+2.1 从本地到远端，远端的rsync服务端需要部署完成
+-a 参数，相当于-rlptgoD，-r 是递归 -l 是链接文件，意思是拷贝链接文件；-p 表示保持文件原有权限；-t 保持文件原有时间；-g 保持文件原有用户组；-o 保持文件原有属主；-D 相当于块设备文件；
+
+-v 传输时的进度等信息，和-P有点关系，自己试试。可以看文档；
+-z 传输时压缩；
+-P 传输进度；
+
+--bwlimit=KBPS 限制I/O带宽，KBytes per second。
+
+--progress 在传输时现实传输过程；
+
+--include=PATTERN 指定不排除而需要传输的文件模式，适用于精确传输指定文件，一般于exclude搭配使用；
+--exclude=PATTERN 指定排除不需要传输的文件模式，格式为需要过滤的文件或目录名称，多个文件之间用空格分隔；
+--exclude-from=FILE 排除FILE中指定模式的文件，将不需要传输的文件列表写入指定的文件中，每行一个文件名称；（如果该文件在传输目录下，包括文件名本身）
+
+ 
+
+从本地推送单个文件至rsync服务器端，backup为rsync指定的bak模块用户，密码写入/home/opsuser/rsync.pass文件中，权限必须为600，本地文件为/backup02/tc-df-2005-20160729.tar.gz，远端module为bak
+rsync -avzP --bwlimit=3000 --progress --password-file=/home/opsuser/rsync.pass /backup02/tc-df-2005-20160729.tar.gz backup@192.168.1.100::bak 　　 　　#单个文件迁移，限速3M
+ 
+
+ 
+
+　　2.从本地推送多个文件至rsync服务器端，本地目录为/backup02/,排除exclude.list文件中指定的文件，其余文件全部传输至远端module为bak的模块对应的目录下
+
+rsync -avzP --bwlimit=3000 --progress --password-file=/home/opsuser/rsync.pass --exclude-from=/backup02/exclude.list /backup02/ backup@192.168.1.100::bak 　　 #批量迁移本地/backup02/目录下文件，限速3M，注意参数--exclude-from后面写入的是文件名称
+　　注:将传输目录下不需要进行备份的文件名字写入指定的文件内（如果该文件在传输目录下，包括文件名本身）
+　　 
+
+　　
+
+　　3.备份rsync服务器端bak模块文件到本地/data/backup02目录下
+
+　　
+
+rsync -avzP --bwlimit=3000 --progress --password-file=/home/opsuser/rsync.pass  backup@192.168.1.100::bak /data/backup02/　  #备份rsync服务器端bak模块对应目录下面的文件至本地/data/backip02/目录下，限速3M
+ 
+
+2. 基于ssh方式传输(需要启动ssh服务，不需要启动rsync服务)　
+基于ssh方式从远程复制到本地，由于是基于ssh方式，server端不需要运行rsync服务，且远程的传输用户为系统的真实用户,若ssh默认为22端口不需要指定传输端口，以下示例指定ssh远程端口为22222进行传输
+　从远端复制到本地
+rsync -avzogP --bwlimit=100  --progress -e 'ssh -p 22222' opsuser@192.168.1.100:/data/server-update/tc-df-2001-20160523.tar.gz /export/backup   　　#基于ssh方式单个文件迁移，多个文件可以用*代替，支持正则，限速100K
+　从本地到远端
+rsync -avzP --delete --exclude=".svn" -e 'ssh -p 2222' /data/backup/ opsuser@192.168.1.100:/data/server-update/        #基于ssh方式备份整个目录，本地目录为/data/backup/，排除.svn文件
+ 
+
+示例:
+复制代码
+//注：server为modul名[server]
+//列出rsync 服务器上的所提供的同步内容 
+    rsync  --list-only  root@192.168.145.5::server
+//列出目录：
+    rsync  --list-only  root@192.168.93.149::server 
+
+//从服务端取数据（客户端只会增加文件）；
+    rsync -avzP root@192.168.93.149::server rhel4home[本地目录]
+    
+//从服务端取数据（使客户端的文件和服务端完全一致，会删除客户端多余的文件）；
+    rsync -avzP --delete root@192.168.93.149::server ./
+    
+//密码从文件中读取：    注意此时的密码文件里面只需要写密码不要写用户名 和服务端的文件是不同的
+    rsync -avzP --delete --password-file=/etc/rsyncd.secrets root@192.168.93.149::server ./
+
+//客户端向服务端提交文件(只需要把目录更换位置即可)
+    rsync -avzP --delete --password-file=/kang/sercet ./ root@192.168.93.149::server

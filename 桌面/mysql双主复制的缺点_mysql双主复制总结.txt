@@ -1,0 +1,84 @@
+mysql双主复制的缺点_mysql双主复制总结
+
+AI前线
+
+于 2021-01-25 19:57:17 发布
+
+262
+ 收藏
+文章标签： mysql双主复制的缺点
+版权
+双主复制：
+
+1)、在两台服务器上各自建立一个具有复制权限的用户；
+
+2)、修改配置文件：
+
+# 主服务器A上
+
+[mysqld]
+
+server-id = 10
+
+log-bin = mysql-bin
+
+relay-log = relay-mysql
+
+auto-increment-offset = 1 # 起始值
+
+auto-increment-increment = 2 # 步长
+
+# 主服务器B上
+
+[mysqld]
+
+server-id = 20
+
+log-bin = mysql-bin
+
+relay-log = relay-mysql
+
+auto-increment-increment = 2
+
+auto-increment-offset = 2
+
+3)、如果此时两台服务器均为新建立，且无其它写入操作，各服务器只需记录当前自己二进制日志文件及事件位置，以之作为另外的服务器复制起始位置即可
+
+serverA|mysql> SHOW MASTER STATUS\G
+
+************************** 1. row ***************************
+
+File:mysql-bin.000001
+
+Position: 710
+
+Binlog_Do_DB:
+
+Binlog_Ignore_DB:
+
+1 row in set (0.00 sec)
+
+server2|mysql> SHOW MASTER STATUS\G
+
+mysql> SHOW MASTER STATUS\G
+
+*************************** 1. row ***************************
+
+File:mysql-bin.000002
+
+Position:810
+
+Binlog_Do_DB:
+
+Binlog_Ignore_DB:
+
+1 row in set (0.00 sec)
+
+4)各服务器接下来指定对另一台服务器为自己的主服务器：
+
+serverA|mysql> CHANGE MASTER TO MASTER TO MASTER_HOST='10.10.10.72',MASTER_USER='replpuser', MASTER_PASSWORD='replpass', MASTER_LOG_FILE='mysql-bin.000002', MASTER_LOG_POS=810
+
+serverB|mysql> CHANGE MASTER TO MASTER TO MASTER_HOST='10.10.10.71',MASTER_USER='replpuser', MASTER_PASSWORD='replpass', MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=710
+————————————————
+版权声明：本文为CSDN博主「AI前线」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/weixin_29235525/article/details/113341167

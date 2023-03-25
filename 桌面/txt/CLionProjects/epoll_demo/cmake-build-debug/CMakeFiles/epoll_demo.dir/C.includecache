@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/kali/CLionProjects/epoll_demo/main.c
+stdio.h
+-
+sys/epoll.h
+-
+netinet/in.h
+-
+string.h
+-
+stdlib.h
+-
+unistd.h
+-
+

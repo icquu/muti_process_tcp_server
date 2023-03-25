@@ -1,0 +1,11 @@
+pt-online-schema-change --user=root --ask-pass --host=127.0.0.1  --alter "ADD INDEX Index_1(d_reason_type, d_content)" D=fpd_lmb_site,t=member_balance_record --no-check-alter --no-check-replication-filters --alter-foreign-keys-method=auto --recursion-method=none --max-load=Threads_running=2 --statistics --print --execute
+
+
+ALTER TABLE `fpd_lmb_site`.`member_balance_record` 
+ADD INDEX `Index_1`(`d_reason_type`, `d_content`);
+
+
+pt-online-schema-change --user=root --ask-pass --alter "ADD INDEX Index_1(d_reason_type, d_content)" D=fpd_lmb_site,t=member_balance_record --no-check-alter --no-check-replication-filters --alter-foreign-keys-method=auto --recursion-method=none --print --dry-run
+
+
+pt-deadlock-logger--user=root --ask-pass 

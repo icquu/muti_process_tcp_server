@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
+    <generated>
+      <config projectName="io" targetName="io" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="bcb2b71d-c9b3-4b4c-b89b-5ba74ef36015" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="ProjectId" id="2DC7AEFauypFXlShQeVhoFCSYqP" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+  </component>
+  <component name="RunManager">
+    <configuration name="io" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="io" TARGET_NAME="io" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="io" RUN_TARGET_NAME="io">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="bcb2b71d-c9b3-4b4c-b89b-5ba74ef36015" name="Default Changelist" comment="" />
+      <created>1660191066524</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1660191066524</updated>
+      <workItem from="1660191069185" duration="1318000" />
+      <workItem from="1660807290007" duration="17000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state width="633" height="170" key="GridCell.Tab.0.bottom" timestamp="1660202465541">
+      <screen x="0" y="0" width="1366" height="730" />
+    </state>
+    <state width="633" height="170" key="GridCell.Tab.0.bottom/0.0.1366.730@0.0.1366.730" timestamp="1660202465541" />
+    <state width="633" height="170" key="GridCell.Tab.0.center" timestamp="1660202465540">
+      <screen x="0" y="0" width="1366" height="730" />
+    </state>
+    <state width="633" height="170" key="GridCell.Tab.0.center/0.0.1366.730@0.0.1366.730" timestamp="1660202465540" />
+    <state width="633" height="170" key="GridCell.Tab.0.left" timestamp="1660202465540">
+      <screen x="0" y="0" width="1366" height="730" />
+    </state>
+    <state width="633" height="170" key="GridCell.Tab.0.left/0.0.1366.730@0.0.1366.730" timestamp="1660202465540" />
+    <state width="633" height="170" key="GridCell.Tab.0.right" timestamp="1660202465541">
+      <screen x="0" y="0" width="1366" height="730" />
+    </state>
+    <state width="633" height="170" key="GridCell.Tab.0.right/0.0.1366.730@0.0.1366.730" timestamp="1660202465541" />
+    <state x="708" y="189" key="com.intellij.ide.util.TipDialog" timestamp="1660807291848">
+      <screen x="0" y="0" width="1366" height="730" />
+    </state>
+    <state x="708" y="189" key="com.intellij.ide.util.TipDialog/0.0.1366.730@0.0.1366.730" timestamp="1660807291848" />
+  </component>
+</project>

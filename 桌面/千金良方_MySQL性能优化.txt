@@ -1,0 +1,216 @@
+page122
+启用所有等待事件的instruments(仪表):
+update performance_schema.setup_instruments set enabled='yes', timed='yes' where name like 'wait/%';
+这时这些仪表已经打开，还需要打开保存这些事件的表，当consumers启用之后才会开始采集。
+
+update performance_schema.setup_consumers set enabled='no' where name like '%wait%';
+设置完成，等待事件开始被记录。
+
+sysbench --test=oltp —db-driver=mysql --mysql-table-engine=innodb --mysql-host=10.10.10.10 --mysql-port=3306 --mysql-db=sbtest —mysql-user='root' --mysql-password='qbench' --test=/usr/share/doc/sysbench/tests/db/oltp.lua --oltp-table-size=5000000 oltp-tables-count=8 --num-threads=16 --max-time=1800 --max-requests=0 --report-interval=1 run 
+
+逐步增大负载，直到QPS不再增加为止，
+
+此时，通过系统性能检测命令top，glances，htop，iostat等可以看到系统瓶颈在哪里。借助pfs也可以达到类似效果。
+
+创建一个视图，用于实时统计当前等待事件(非历史数据)
+> create view sys.test_waits as select sum(TIMER_WAIT) as TIMER_WAIT, sum(NUMBER_OF_BYTES) as NUMBER_OF_BYTES, EVENT_NAME, OPERATION from events_waits_history_long where EVENT_NAME!='idle' group by EVENT_NAME, OPERATION;
+
+使用上面的视图进行查询，并对查询结果进行降序排列，可以列出耗时最多的等待事件。
+> select sys.format_time(TIMER_WAIT), sys.format_bytes(NUMBER_OF_BYTES), EVENT_NAME, OPERATION from sys.test_waits where sys.format_time (TIMER_WAIT) not regexp 'ns|us' order by TIMER_WAIT desc;
+
+
+page127
+常规查询锁信息:
+select * from performance_schema.data_locks;
+select * from performance_schema.data_lock_waits;
+select * from information_schema.innodb_trx\G
+show engine innodb status;
+如果都没有什么信息可以看看是不是有元数据锁:
+通过performance_schema.metadata_locks表来排查谁持有全局读锁，全局读锁在该表中通常记录着同一个会话的的OBJECT_TYPE为global和commit，LOCK_TYPE都为SHARED的两把显式锁。
+select * from performance_schema.metadata_locks where OWNER_THREAD_ID!=sys.ps_thread_id(connection_id())\G
+
+查看process_id为4和5的线程各自对应的内部线程ID是多少：
+select sys.ps_thread_Id(4);
+
+如果是生产环境，综合上述信息，通过processlist信息的行记录中找到process_id为4对应的User,Host, db信息，大致判断属于什么业务用途，找相关人员询问清楚......
+
+找出谁持有MDL锁
+select * from performance_schema.metadata_locks where OWNER_THREAD_ID!=sys.ps_thread_id(connection_id())\G
+如果看不到相关sql语句，可以通过查询infomation_schema.innodb_trx表，确认该线程是否存在一个没有提交的事务：
+select * from information_schema.innodb_trx\G
+通过这个查询找到未提交事务执行的语句：
+select * from performance_schema.events_statements_current\G
+......
+
+找出谁持有表级锁：
+select * from performance_schema.table_handles where OWNER_THREAD_ID!=0\G
+
+找出对应的语句：
+select * from performance_schema.events_statements_current where thread_id=113\G
+如何知道内部ID为113的线程对应的performance_schema.threads是多少呢，可以通过performance_schema.threads表查询：
+select processlist_id from performance_schema.threads where thraad_id=113;
+
+kill <precess_id>
+......
+
+找出谁持有行锁：
+performance_schema.data_locks表是MySQL 8.0中新增的,在8.0之前的版本中不支持。
+如果一个事务长时间未提交，我们虽然可以从information_schema.innodb_trx、performance_schema.events_transactions_cunrrent等表中查询到相应的事务信息，但却无从知道这个事务持有了哪些锁。
+
+查看锁信息：
+select * from performance_schema.data_locks\G
+查看锁等待关系：
+select * from sys.innodb_lock_waits\G
+8.0用这个：
+select * from performance_schema.data_lock_waits\G
+......
+
+page146 6.4.1查看SQL语句执行阶段信息
+在会话 1 中查询 events_stages_history_long 表。
+mysql> select THREAD_ID ,EVENT_NAME, SOURCE, sys.format_time(TIMER_WAIT) as exec_time, WORK_COMPLETED, WORK_ESTIMATED from performance_schema.events_stages_history_long;
+
+page150查看最近的事务执行信息
+虽然我们可以通过慢查询日志查询到一条语句的执行总时长，但是如果数据库中存在着一些大事务在执行过程中叵滚了，或者在执行过程中异常中止，这个时候慢查询日志就爱莫能助了，这时我们可以借助performance_schema的events_transactions_*表来查看与事务相关的记录，在这些表中详细记录了是否有事务被回滚、活跃（长时间未提交的事务也
+属于活跃事务）或己提交等信息。下面分别模拟几种事务情况，并查看事务事件记录表。
+update set_instruments set enabled='yes', timed='yes' where name like 'transaction';
+
+update set_instruments set enabled='yes' where name like '%transaction%';
+
+执行清理，避免其他事务干扰。
+truncate events_transactions_current; truncate events_transactions_history;
+truncate events_transaction_history_long;
+
+查询活跃事务，活跃事务表示当前正在执行的事务事件，需要从
+events_transactions_current 表中查询.
+select THREAD_ID, EVENT_NAME, STATE, TRX_ID, GTID, SOURCE, TIMER_WAIT,ACCESS_MODE,ISOLATION_LEVEL,AUTOCOMMIT, NESTING_EVENT_ID,NESTING_EVENT_TYPE from events_transactions_current\G
+
+page153查看多线程复制报错详情
+select * from performance_schema.replication_applier_status_by_worker where LAST_ERROR_MESSAGE!='*\G
+
+
+page156sys库的使用：
+你可以使用sys系统库本身来启用所有需要的instruments和consumers (而不需要手动
+使用DML语句来启用)。
+• 启用所有的 wait instruments： CALL sys.ps_setup_enable_instrument('wait');
+• 启用所有的 stage instruments: CALL sys.ps_setup_enable_instrument('stage');
+• 启用所有的 statement instruments: CALL sys.ps_setup_enabie_instrument('statement');
+• 启用所有事件类型的 current 表:CALL sys.ps_setup_enable_consumer('current');
+• 启用所有事件类型的 history_long 表：CALL sys.ps_setup_enable_consumer('history_
+long');
+
+
+page158 sys系统库的进度报告功能
+#查看当菌正在执行的语句进度信息
+select * from session where conn_id!=connection_id() and trx_state='ACTIVE';
+#查看已经执行完的语句相关统计信息
+select * from session where conn_id!=connection_id () and trx_state=' COMMITTED';
+
+查看是否有事务锁等待：
+select * from innodb_lock_waits\G
+查看是否有MDL锁等待：
+通过schema_table_lock_waits视图可以查看当前链接线程的MDL锁等待信息，显示哪些会话被MDL锁阻塞，是谁阻塞了这些会话，数据来源:performance_schema下的threads,metadata_locks、events_statements_current 表。该视图是 MySQL 5.7.9 中新增的.
+
+下面是使用schema_table_lock_waits视图查询的结果集。
+#首先需要启用与MDI.锁等待亨件相关的instruments
+mysql> call sys.ps_setup_enable_instrument('wait/lock/metadata/sql/mdl');
+mysql> select * from schema_table_lock_waits\G
+......
+
+page173 查看InnoDB缓冲池中的热点数据有哪些
+
+select * from innodb_buffer_stats_by_schema;
+select * from innodb_buffer_stats_by_table;
+
+查看冗余索引
+select * from scheina_redundant_indexes limit 1\G
+查看未使用的索引
+select * from sciieniajcraasedjtndexes limit 3;
+
+
+
+使用schema_table_statistics_with_buffer视图可以查询表的增删改查数据量，IO耗时，按照执行时间降序排列。
+select * from schema_table_statistics_with_buffer limit 1\G
+
+查看MySQL磁盘文件产生的磁盘流量与读写比例:
+select * from io_global_by_file_by_bytes limit 3;
+
+查看哪些语句使用了全表扫描:
+select * from statements_with_full_table_scans limit 1\G
+
+查看哪些语句使用了文件排序:
+select * from statements_with_sorting limit 1\G
+
+查看哪些语句使用了临时表:
+select * from statements_with_temp_tables limit 1\G
+
+WRITESET并行复制	page260
+数据库性能通用“切口”	page318
+
+性能调优金字塔：
+硬件优化	327
+系统优化	327
+参数调优	328
+SQL/索引调优	329
+
+上线前烤机	339
+stress	339
+FIO 	341
+数据库烤机	341
+
+28章 每隔45天的MySQL性能低谷	344
+29章 MySQL连接无法自动释放	359
+30章 查询MySQL偶尔比较慢		363
+31章 MySQL最多只允许214个连接	367-374
+32章 MySQL挂起诊断思路		375-377
+33章 硬件和系统调优			378-386 407
+34章 并发删除数据造成死锁		387-390
+35章 删除不存在的数据造成死锁	391-393
+36-39章
+插入意向锁死锁
+分页查询优化
+子查询优化——子查询转换为连接
+子查询优化——使用delete删除数据
+
+43章 HammerDB在线事务处理测试
+44章 sysbench数据库压测工具
+45章 mysqladmin和innotop工具详解	506
+wget https://github.com/innotop/innotop/archive/refs/heads/master.zip
+unzip master.zip
+cd innotop-master/
+yum install perl-DBI perl-DBD-MySQL perl-TermReadKey perl-Time-HiRes -y
+./innotop -uroot -pDyR10ucTlC1uvS3-
+---------------------------------------------------------------------------
+Switch to a different mode:
+   A  Dashboard         I  InnoDB I/O Info     Q  Query List
+   B  InnoDB Buffers    K  InnoDB Lock Waits   R  InnoDB Row Ops
+   C  Command Summary   L  Locks               S  Variables & Status
+   D  InnoDB Deadlocks  M  Replication Status  T  InnoDB Txns
+   F  InnoDB FK Err     O  Open Tables         U  User Statistics
+
+Actions:
+   d  Change refresh interval        q  Quit innotop
+   k  Kill a query's connection      r  Reverse sort order
+   n  Switch to the next connection  s  Choose sort column
+   p  Pause innotop                  x  Kill a query
+
+Other:
+ TAB  Switch to the next server group   /  Quickly filter what you see
+   !  Show license and warranty         =  Toggle aggregation
+   #  Select/create server groups       @  Select/create server connections
+   $  Edit configuration settings       \  Clear quick-filters
+---------------------------------------------------------------------------
+46章 利用Prometheus+Grafana搭建炫酷的MySQL监控平台 525
+https://prometheus.io/download/
+
+47章 Percona Toolkit常用工具详解
+48章 MySQL主流备份工具之mysqldump详解
+49章 MySQL主流备份工具之XtraBackup详解
+50章 MySQL主流备份工具之mydumper详解
+51章 MySQL主流闪回工具详解
+binlog2sql	676
+myflash		691
+
+---------------------------------------
+
+
+

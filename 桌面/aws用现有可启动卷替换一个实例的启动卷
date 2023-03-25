@@ -1,0 +1,30 @@
+aws用现有可启动卷替换一个实例的启动卷
+
+先挂载未被使用的的可启动卷，因为块设备的ID相同，需要修改设备的uuid：
+
+重新生成一个UUID
+
+uuidgen
+d672b79e-e72b-4bd6-a397-38373eabb046
+
+将重新生成的UUID烧录到未挂载的磁盘分区
+
+xfs_admin -U d672b79e-e72b-4bd6-a397-38373eabb046 /dev/xvdf2
+Clearing log and setting UUID
+writing all SBs
+new UUID = d672b79e-e72b-4bd6-a397-38373eabb046
+
+重新挂载
+
+mount -t xfs /dev/xvdf2 /data/disktmp/
+确认是否挂载成功
+
+
+修改/etc/sysconfig/network-scripts/ifcfg-ens5中macaddr，改为和待替换实例的网卡硬件地址相同
+cat /etc/sysconfig/network-scripts/ifcfg-ens5
+
+改回原来的uuid
+umount
+xfs_admin
+
+停止实例，卸载实例上的卷，将未被使用的卷挂载为 /dev/sda1，启动实例，完成替换。

@@ -1,0 +1,10 @@
+思科设备管理
+在路由上做这条策略吧，
+ip nat inside source static 192.168.41.11 179.248.235.28
+然后通过WEB打开https://179.248.235.28
+就可以打开IDRAC了，
+IDRAC是用来重装系统，重新分区系统，系统卡死时重启系统等作用。
+
+
+你在路由上show run | sec ip nat
+ip nat inside source static 172.16.41.33 179.248.235.28

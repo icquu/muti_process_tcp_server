@@ -1,0 +1,52 @@
+Linux系统编程的确有意思
+从基本的网络通讯结构到多线程多进程结构再加上IO多路复用是目前网络编程的常用工具和方法，这里面要留意IO阻塞，非阻塞等一些细节处理，考虑不周容易出现意外。
+
+这里面的基本功要常常练习，烂熟于心才好。
+
+
+struct sockaddr_in server_addr;
+int fd = socket();
+server_addr.family=AF_INET;
+server_addr.port=htons(6565);
+server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+nonblock(fd);
+
+bind();
+
+listen();
+
+accept();//注意非阻塞IO状态下的返回值。
+
+...
+
+
+
+---------------------------------------
+如果使用epoll多路复用.就要使用几个相关的函数:
+epoll_create(128);
+
+epoll_ctl();
+
+epoll_wait();
+--------------------------------------
+
+提高网络程序性能的着手点在于减少用户空间和内核空间的数据交换或叫数据拷贝。这在《Linux系统高性能编程》一书中有非常好表述。另外就是着手减少耗时函数的调用次数。在实际操作中会使用池化技术进行应对。因为网络程序的特性，常用一种反应堆模型，借助epoll提供的数据结构，可以比较容易的使用函数指针实现反应堆模型。
+
+--------------------------------------
+在数据库系统的设计中，缓存的设计非常精妙，在提高软件性能方面立竿见影。
+
+未料胜，先料败，才比较稳
+--------------------------------------
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+int open(const char *pathname, int flags, ...);
+
+#include <unistd.h>
+int close(int fd);
+
+ssize_t read(int fd, void *buf, size_t count);
+
+https://www.commandlinux.com/man-page/man3/

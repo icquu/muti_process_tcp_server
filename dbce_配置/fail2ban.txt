@@ -1,0 +1,73 @@
+https://www.tecmint.com/install-fail2ban-to-protect-ssh-on-centos-rhel/
+Installing Fail2ban on CentOS/RHEL 8
+The fail2ban package is not in the official repositories but it is available in the EPEL repository. After logging into your system, access a command-line interface, then enable the EPEL repository on your system as shown.
+
+# dnf install epel-release
+OR
+# dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+Install EPEL Repo on CentOS and RHEL 8
+Install EPEL Repo on CentOS and RHEL 8
+Afterward, install the Fail2ban package by running the following command.
+
+# dnf install fail2ban
+Install Fail2ban in CentOS and RHEL 8
+Install Fail2ban in CentOS and RHEL 8
+Configuring Fail2ban to Protect SSH
+The fail2ban configuration files are located in the /etc/fail2ban/ directory and filters are stored in the /etc/fail2ban/filter.d/ directory (the filter file for sshd is /etc/fail2ban/filter.d/sshd.conf).
+
+The global configuration file for the fail2ban server is /etc/fail2ban/jail.conf, however, it is not recommended to modify this file directly, as it will probably be overwritten or improved in case of a package upgrade in the future.
+
+As an alternative, it is recommended to create and add your configurations in a jail.local file or separate .conf files under the /etc/fail2ban/jail.d/ directory. Note that configuration parameters set in jail.local will override whatever is defined in jail.conf.
+
+For this article, we will create a separate file called jail.local in the /etc/fail2ban/ directory as shown.
+
+# vi /etc/fail2ban/jail.local
+Once the file is open, copy and paste the following configuration in it. The [DEFAULT] the section contains global options and [sshd] contains parameters for the sshd jail.
+
+[DEFAULT] 
+ignoreip = 192.168.56.2/24
+bantime  = 21600
+findtime  = 300
+maxretry = 3
+banaction = iptables-multiport
+backend = systemd
+
+[sshd] 
+enabled = true
+Fail2ban Configuration
+Fail2ban Configuration
+Let’s briefly explain the options in the above configuration:
+
+ignoreip: specifies the list of IP addresses or hostnames not to ban.
+bantime: specified the number of seconds that a host is banned for (i.e effective ban duration).
+maxretry: specifies the number of failures before a host gets banned.
+findtime: fail2ban will ban a host if it has generated “maxretry” during the last “findtime” seconds.
+banaction: banning action.
+backend: specifies the backend used to get log file modification.
+The above configuration, therefore, means if an IP has failed 3 times in the last 5 minutes, ban it for 6 hours, and ignore the IP address 192.168.56.2.
+
+Next, start and enable the fail2ban service for now and check if it is up and running using the following systemctl command.
+
+# systemctl start fail2ban
+# systemctl enable fail2ban
+# systemctl status fail2ban
+Start Fail2ban Service
+Start Fail2ban Service
+Monitoring Failed and Banned IP Address Using fail2ban-client
+After configuring fail2ban to secure sshd, you can monitor failed and banned IP addresses using the fail2ban-client. To view the current status of the fail2ban server, run the following command.
+
+# fail2ban-client status
+Check Fail2ban Jail Status
+Check Fail2ban Jail Status
+To monitor the sshd jail, run.
+
+# fail2ban-client status sshd
+Monitor SSH Failed Logins with Fail2ban
+Monitor SSH Failed Logins with Fail2ban
+To unban an IP address in fail2ban (in all jails and database), run the following command.
+
+# fail2ban-client unban 192.168.56.1
+For more information on fail2ban, read the following man pages.
+
+# man jail.conf
+# man fail2ban-client

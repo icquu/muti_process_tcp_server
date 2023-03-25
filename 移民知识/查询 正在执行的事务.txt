@@ -1,0 +1,22 @@
+查询 正在执行的事务：
+SELECT * FROM information_schema.INNODB_TRX
+
+查看正在锁的事务
+SELECT * FROM INFORMATION_SCHEMA.INNODB_LOCKS; 
+
+查看等待锁的事务
+SELECT * FROM INFORMATION_SCHEMA.INNODB_LOCK_WAITS;
+
+select trx_state, trx_started, trx_mysql_thread_id, trx_query from information_schema.innodb_trx;
+
+我遇到的cpu 100%情况
+我遇到的mysql cpu100%都是因为定时任务导致sql累积，多个线程执行同一sql导致的。
+所以如果有遇到相同CPU彪高的情况，但是一直在生产环境没法定位到具体SQL的情况下，此时记得也一定要关注下SQL的执行频率问题，因为最初的确没有想到执行频率可以高到这种程度，一个如此高的执行频率竟然可以让MySQL彪高到如此大的CPU；
+
+select * from information_schema.processlist where info!='';
+
+2、查询CPU的IO读写速率
+分别使用sar 命令获取 IO的读写速率监控：
+1、sar -b 1 30
+
+2、sar -u -o 1 30

@@ -1,0 +1,95 @@
+3.2.2 DHCP 服务器
+https://servidordebian.org/pt/stretch/intranet/dhcp/server
+注意力
+在网段上，应该只有一个 DHCP 服务器，因此最终可能需要从 ADSL 路由器禁用 DHCP 服务器。
+
+安装
+root@server:~# apt install isc-dhcp-server
+配置
+DHCP 服务应仅可用于内部网络。因此，您应该只接受内部接口（在本例中为 eth0）的连接，该接口在配置文件 /etc/default/isc-dhcp-server 中定义：
+
+
+# Defaults for isc-dhcp-server initscript
+# sourced by /etc/init.d/isc-dhcp-server
+# installed at /etc/default/isc-dhcp-server by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# [...]
+
+# On what interfaces should the DHCP server (dhcpd) serve DHCP requests?
+#       Separate multiple interfaces with spaces, e.g. "eth0 eth1".
+INTERFACES="eno1"
+配置的主要部分保存在 /etc/dhcp/dhcpd.conf 文件中。
+
+在此文件中指示域名（），DNS（服务器）的地址。在该选项中，您可以指示本地 dns 服务器的名称（例如：ns.home.lan）而不是 IP 地址（如果您已在 3.1.3 本地 DNS 服务器上配置了它）。option domain-name “home.lan”;option domain-name-servers 192.168.1.100, 192.168.1.1;domain-name-servers
+
+还定义了分配的 IP 地址 （e） 的正常和最大持续时间。客户端始终可以在当前分配到期之前请求新分配，无论是否接收相同的 IP 地址。default-lease-time 600 max-lease-time 7200;
+
+#
+# Sample configuration file for ISC dhcpd for Debian
+#
+#
+
+# The ddns-updates-style parameter controls whether or not the server will
+# attempt to do a DNS update when a lease is confirmed. We default to the
+# behavior of the version 2 packages ('none', since DHCP v2 didn't
+# have support for DDNS.)
+ddns-update-style none;
+
+# option definitions common to all supported networks...
+option domain-name "home.lan";
+option domain-name-servers 192.168.1.100, 192.168.1.1;
+
+default-lease-time 600;
+max-lease-time 7200;
+
+# If this DHCP server is the official DHCP server for the local
+# network, the authoritative directive should be uncommented.
+authoritative;
+
+# [...]
+最后，对于网段 192.168.1.0，指示可用于分配的地址范围 （）、要使用的路由器 （） 和广播地址range 192.168.1.32 192.168.1.63;option routers 192.168.1.1; (option broadcast-address 192.168.1.255;)
+
+# [...]
+
+## SubNet home.lan
+subnet 192.168.1.0 netmask 255.255.255.0 {
+  range 192.168.1.32 192.168.1.63;
+  option routers 192.168.1.1;
+  option broadcast-address 192.168.1.255;
+}
+DHCP协议通过将网卡号与所需地址相关联，可以为某些系统分配特定地址。但是，这些固定地址不应在为动态分配保留的地址范围内。
+
+# [...]
+
+# Fixed IP addresses can also be specified for hosts.   These addresses
+# should not also be listed as being available for dynamic assignment.
+# Hosts for which fixed IP addresses have been specified can boot using
+# BOOTP or DHCP.   Hosts for which no fixed address is specified can only
+# be booted with DHCP, unless there is an address range on the subnet
+# to which a BOOTP client is connected which has the dynamic-bootp flag
+# set.
+
+host desktop {
+  hardware ethernet 01:23:45:67:89:10;
+  fixed-address 192.168.1.2;
+}
+host laptop {
+  hardware ethernet 01:23:45:67:89:11;
+  fixed-address 192.168.1.3;
+}
+
+# [...]
+重新启动 DHCP 服务：
+
+root@server:~# systemctl restart isc-dhcp-server
+设置客户
+Linux目录
+在 Linux 客户端上，只需安装 dhcp 客户端软件包即可。安装期间生成的配置应该足够了。
+
+root@server:~# apt install isc-dhcp-client
+窗户
+在 Windows 客户端上，应启用网络接口的 TCP/IP 属性中的“自动获取 IP 地址”选项。在通过 ADSL 调制解调器或电缆访问互联网的家庭网络上，此选项原则上应已启用。

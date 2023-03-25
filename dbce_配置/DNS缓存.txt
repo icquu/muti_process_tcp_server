@@ -1,0 +1,169 @@
+3.1.2 DNS 缓存
+https://servidordebian.org/pt/stretch/intranet/dns/cache
+尽管因特网地址具有“可读”（www.google.com）名称，但它们必须转换为其服务器的IP地址（213.129.232.18）。此转换通过在域名系统或 DNS（域名系统）中执行搜索来执行。
+
+DNS 缓存在本地保存此搜索的结果以供将来使用，从而避免重试搜索并显著提高响应速度。
+
+安装
+root@server:~# apt install bind9 bind9-doc dnsutils
+配置
+安装期间生成的配置功能完美，无需任何更改。但是，我们将以某种方式自定义安装。
+
+配置保存在 /etc/bind/named.conf.options 文件中。
+
+首先，我们将确保仅应答来自帖子本身（或）或内部网络地址（）的解析请求。所有其他内容将被忽略，以避免第三方可能滥用我们的DNS服务器。我们将调用的这个访问控制列表或 ACL 在 /etc/bind/named.conf.options 文件中定义：127.0.0.1::1192.168.1.0/24internals
+
+acl internals {
+        127.0.0.0/8;
+        ::1/128;
+        192.168.1.0/24;
+};
+接下来，我们定义哪些服务器将在解析名称时寻求帮助，如果您无法在本地进行解析（转发器）。
+
+作为转发器，我们可以选择几个假设：一个是我们使用互联网访问提供商的DNS服务器。
+
+另一个非常有趣的可能性是使用当前可用的各种公共 DNS 服务之一，例如：
+
+开放域名解析
+谷歌公共域名解析
+OpenNIC项目
+这些服务声称不仅提供更快的解决方案，还提供一些额外的安全服务，例如恶意地址过滤等。
+
+在这种情况下， 将使用Cloudflare的公共服务器，并且通过冗余，我们还将添加gooogle Google公共DNS服务器。
+
+配置保存在 /etc/bind/named.conf.options 文件中：
+
+// [...]
+
+options {
+        directory "/var/cache/bind";
+
+        // If there is a firewall between you and nameservers you want
+        // to talk to, you may need to fix the firewall to allow multiple
+        // ports to talk.  See http://www.kb.cert.org/vuls/id/800113
+
+        // If your ISP provided one or more IP addresses for stable
+        // nameservers, you probably want to use them as forwarders.
+        // Uncomment the following block, and insert the addresses replacing
+        // the all-0's placeholder.
+
+        forwarders {
+                // Cloudflare Public DNS (IPv4)
+                1.1.1.1;
+                1.0.0.1;
+                // Cloudflare Public DNS (IPv6)
+                2606:4700:4700::1111;
+                2606:4700:4700::1001;
+
+                // Google Public DNS (IPv4)
+                8.8.8.8;
+                8.8.4.4;
+                // Google Public DNS (IPv6)
+                2001:4860:4860::8888;
+                2001:4860:4860::8844;
+        };
+
+        //========================================================================
+        // If BIND logs error messages about the root key being expired,
+        // you will need to update your keys.  See https://www.isc.org/bind-keys
+        //========================================================================
+        dnssec-validation auto;
+
+        auth-nxdomain no;    # conform to RFC1035
+        // listen-on-v6 { any; };
+};
+
+最后，我们加强了安全性，以确保服务器仅由我们的内部网络使用。
+
+options {
+        // [...]
+
+        // Security options
+
+        // Listen on local interfaces only
+        listen-on { 127.0.0.1; 192.168.1.100; };
+        listen-on-v6 { ::1; };
+
+        // Accept requests for internal network only
+        allow-query { internals; };
+
+        // Allow recursive queries to the local hosts
+        allow-recursion { internals; };
+
+        // Do not transfer the zone information to the secondary DNS
+        allow-transfer { none; };
+
+        // Do not make public version of BIND
+        version none;
+};
+
+检查配置文件是否已正确编辑：
+
+root@server:~# named-checkconf
+更新 /etc/resolv.conf 文件，以便在本地完成名称解析：
+
+nameserver 127.0.0.1
+nameserver ::1
+另请检查名称解析也通过 DNS 服务的 /etc/nsswitch.conf 文件：
+
+# [...]
+hosts:	files dns
+# [...]
+重新启动 DNS 服务：
+
+root@server:~# systemctl restart bind9
+验证
+作为验证，只需搜索任何网站的IP地址。DNS 服务器应该是我们的 （127.0.0.1），并且应正确显示站点的 IP 地址或地址：
+
+root@server:~# nslookup www.debian.org
+Server:         127.0.0.1
+Address:        127.0.0.1#53
+
+Non-authoritative answer:
+Name:   www.debian.org
+Address: 5.153.231.4
+Name:   www.debian.org
+Address: 130.89.148.14
+反向过程，即从 IP 地址搜索名称也应该有效：
+
+root@server:~# nslookup 5.153.231.4
+Server:         127.0.0.1
+Address:        127.0.0.1#53
+
+Non-authoritative answer:
+4.231.153.5.in-addr.arpa        name = senfter.debian.org.
+
+Authoritative answers can be found from:
+.       nameserver = g.root-servers.net.
+.       nameserver = a.root-servers.net.
+.       nameserver = l.root-servers.net.
+.       nameserver = j.root-servers.net.
+.       nameserver = b.root-servers.net.
+.       nameserver = k.root-servers.net.
+.       nameserver = m.root-servers.net.
+.       nameserver = f.root-servers.net.
+.       nameserver = c.root-servers.net.
+.       nameserver = d.root-servers.net.
+.       nameserver = h.root-servers.net.
+.       nameserver = e.root-servers.net.
+.       nameserver = i.root-servers.net.
+设置客户
+Linux目录
+对于 Linux 系统，请编辑文件 /etc/resolv.conf，并将名称服务器添加或替换为我们服务器的 IP 地址：
+
+# [...]
+nameserver 192.168.1.100
+# [...]
+窗户
+对于Windows系统，在网络连接的Internet协议属性（TCP / IPv4））中指示我们的DNS服务器（192.168.1.100）的地址作为首选DNS服务器。
+
+Configuração do servidor DNS no Microsoft Windows 7
+
+从这一刻起，名称解析将由我们的 DNS 缓存服务器执行。
+
+自动客户端设置
+DNS 服务器也可以通过 DHCP 协议自动分配给客户端。为此，只需将带有 DNS 服务器地址或地址的域名服务器选项添加到 3.2.2 DHCP 服务器的 /etc/dhcp/dhcpd.conf 文件中：
+
+# [...]
+option domain-name-servers 192.168.1.100;
+# [...]

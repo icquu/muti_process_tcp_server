@@ -1,0 +1,68 @@
+网络编程必备：epoll
+
+https://www.bilibili.com/video/BV1aq4y1f7M9?spm_id_from=333.999.0.0
+
+几乎所有的Linux网络服务器都使用了epoll。比如：redis nginx mysql
+
+epoll的六种做法：
+水平触发：LT(是1的时候)
+边缘触发：ET(0变1的时候触发)
+
+一般来说，大块数据使用边缘触发，小块数据使用水平触发。从性能上来讲，边缘触发和水平触发的效率几乎相等。
+1.单线程模式：
+单线程解决不了并发，并行的问题。比如执行了SQL，会导致阻塞。写日志会导致阻塞。
+只有纯内存操作可以使用单线程。
+比如把SQL放入队列或线程池中，可以解决阻塞问题，在压力并不大的情况下是没有问题的。
+
+2.多线程模式1：
+采用单线程处理accept，多线程处理receive和send
+
+3.多线程模式2：
+当超过1万个客户同时连接的时候，单线程accept无法满足处理要求，使用多线程处理accept，多线程处理receive和send。
+这里引入一个问题，多线程如何处理accept？在触发EPOLLIN后，fd又等于lfd，这时，放入队列，由多个线程去读取队列。
+可以一个线程多个fd，不能多个线程公用一个fd，会出现问题。出现资源争用，此时如果需要这么做，就要加锁。
+
+多个线程监测一个lfd，event为水平触发:
+pthread_create(&pth, NULL, acc, fd);
+pthread_create(&pth, NULL, acc, fd);
+pthread_create(&pth, NULL, acc, fd);
+pthread_create(&pth, NULL, acc, fd);
+有连接请求过来，会引起惊群效应，解法是加锁，加锁方法：
+
+多进程用在session之间独立，相互无关联的场景。软件开发存在一个问题，在不求最优解的情况下，所有方法都可以。比如即时通讯就不适合用多进程来实现。
+
+毕业的前5年保持每年4本左右的基础技术书籍。
+
+
+int efd = epoll_create(1024);
+
+// 创建socket并监听，返回lfd
+// socket,...bind,listen;
+
+
+struct epoll_event event,events[1024];
+
+
+/*
+typedef union epoll_data {
+               void        *ptr;
+               int          fd;
+               uint32_t     u32;
+               uint64_t     u64;
+           } epoll_data_t;
+
+struct epoll_event {
+               uint32_t     events;      
+               epoll_data_t data;        
+           };
+*/
+
+event.data.fd = lfd;
+event.event = EPOLLET|EPOLLIN;
+
+epoll_ctl(efd, EPOLL_CTL_ADD, &event);
+
+while(1){
+	epoll_wait();
+}
+

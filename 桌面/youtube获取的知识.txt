@@ -1,0 +1,29 @@
+youtube获取的知识
+Linux server web gui - management with cockpit on ubuntu
+sudo apt install cockpit -y
+
+netplan -> NetworkManager on ubuntu
+sudo nano /etc/netplan/00-interface-config.yaml
+
+add line under "version: 2"
+    renderer: NetworkManager
+
+sudo netplan try
+
+sudo apt install cockpit-machines
+
+github.com/xcad2k  Follow me
+github.com/optimans/cockpit-zfs-manager
+
+teleport the ssh client tool
+
+prometheus and grafana
+percona pmm-server
+
+容器的web管理工具
+zfs的cockpit的管理插件
+
+网络编程
+https://www.youtube.com/watch?v=LxUnb7Io2BA&list=PLkuKHvw9NmzSXIpQV5q_oGVCUaW906Z6s&index=62
+
+学习编程也是收集和积累的过程

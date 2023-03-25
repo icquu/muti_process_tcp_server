@@ -1,0 +1,19 @@
+添加到rc.local
+
+ip=$(ip a| grep global| awk '{print $2}')
+if [[ $ip != '172.31.16.45/20' && -f /var/lib/mysql/init_mysql_slave.sh ]]; then
+        bash /var/lib/mysql/init_mysql_slave.sh && mv /var/lib/mysql/init_mysql_slave.sh /var/lib/mysql/init_mysql_slave.sh.bak
+fi
+
+------------------
+
+调用的脚本:
+#!/bin/bash
+
+server_id=$(ip a| grep global| awk '{print $2}'|awk -F'.' '{print $3 $4}'|awk -F'/' '{print $1}')
+buffer=$(free | grep -i mem| awk '{print $2*0.7/1024/1024}'|awk -F'.' '{print $1}')G
+
+sed -i "s/server-id = 3306/server-id = $server_id/" /etc/my.cnf
+sed -i "s/innodb_buffer_pool_size = 4G/innodb_buffer_pool_size = $buffer/" /etc/my.cnf
+rm -f /var/lib/mysql/auto.cnf
+systemctl enable mysqld && systemctl start mysqld

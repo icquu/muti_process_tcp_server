@@ -1,0 +1,33 @@
+Debian系统管理
+安全相关
+AppArmor用于程序运行时的资源授权管理，所有用户执行同一程序时都面临着相同的规则集。
+AppArmor配置文件存储在/etc/apparmor.d/，它们包含有关每个程序可以使用的资源的访问控制规则的列表。这些配置文件由apparmor_parser命令编译后加载到内核，可以指定运行模式为强制模式或提醒模式。
+AppArmor支持内置于Debian提供的标准内核中。因此，启用AppArmor非常容易，使用apt安装AppArmor的套件包就可以使用AppArmor了
+
+    tbw@tbw-PC:~$ sudo apt install apparmor apparmor-profiles apparmor-utils
+
+AppArmor在安装后即可正常运行，执行aa-status确认apparmor已经可以使用：
+
+    tbw@tbw-PC:~$ sudo aa-status
+
+该AppArmor的默认包含了AppArmor社区管理的配置文件。要获得更多配置文件，您可以安装apparmor-profiles-extra，其中包含由Ubuntu和Debian开发的配置文件。每个配置文件的状态可以是:
+强制aa-enforce,
+警告aa-complain,
+禁用aa-disable,
+审核aa-audit
+
+    tbw@tbw-PC:~$ sudo aa-enforce /usr/bin/pidgin
+    Setting /usr/bin/pidgin to enforce mode.
+    tbw@tbw-PC:~$ sudo aa-complain /usr/sbin/dnsmasq
+    Setting /usr/sbin/dnsmasq to complain mode.
+
+尽管创建AppArmor配置文件非常容易，但是大多数程序都没有。下面将向您展示如何创建一个让AppArmor监视目标程序的系统调用及其访问的资源的配置文件。
+最需要关注的是面向网络的程序限制，因为它们常常是远程攻击者的目标。这也是为什么AppArmor会提供一个aa-unconfined命令来列出没有关联配置文件并且公开了开放网络套接字的程序的原因。使用该--paranoid选项，您将获得具有至少一个活动网络连接的所有不受限制的进程。
+
+    tbw@tbw-PC:~$ sudo aa-unconfined
+    801 /sbin/dhclient not confined
+    409 /usr/sbin/NetworkManager not confined
+    411 /usr/sbin/cupsd confined by '/usr/sbin/cupsd (enforce)'
+    ......
+
+    tbw@tbw-PC:~$ sudo aa-genprof dhclient

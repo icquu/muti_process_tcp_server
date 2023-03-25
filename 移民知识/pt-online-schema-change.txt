@@ -1,0 +1,4 @@
+pt-online-schema-change --user=root --password=DyR10ucTlC1uvS3-  D=fpd_lmb_site,t=detail_log --max-lag=1s --check-interval=10s --alter "engine=innodb" --nocheck-replication-filters --execute
+
+
+pt-online-schema-change --user=root --password=DyR10ucTlC1uvS3-  D=fpd_lmb_site,t=detail_log --max-lag=1s --check-interval=10s --alter "engine=innodb" --nocheck-replication-filters --dry-run

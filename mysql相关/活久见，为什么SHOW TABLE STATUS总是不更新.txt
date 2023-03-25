@@ -1,0 +1,24 @@
+活久见，为什么SHOW TABLE STATUS总是不更新
+https://imysql.com/2020/07/12/why-dose-show-table-status-can-not-update.shtml
+
+MySQL读取各个my.cnf配置文件的先后顺序是：
+/etc/my.cnf
+/etc/mysql/my.cnf
+/usr/local/mysql/etc/my.cnf
+~/.my.cnf
+
+
+mysqldump加-w参数备份
+ 2014/06/22  叶金荣  数据库
+我们在用mysqldump备份数据时，有个选项是 –where / -w，可以指定备份条件，这个选项的解释是：
+
+-w, --where=name    Dump only selected records. Quotes are mandatory
+我们可以做个测试，例如：
+
+mysqldump --single-transaction -w ' id < 10000 ' mydb mytable > mydump.sql
+这时候就可以备份出mytable表中 id< 10000 的所有记录了。假设我们还想加一个时间范围条件，例如：
+
+mysqldump --single-transaction -w " id < 10000 and logintime < unix_timestamp('2014-06-01')" mydb mytable > mydump.sql
+在这里，一定注意单引号和双引号问题，避免出现这种情况：
+
+MySQL 8.0中对EXISTS、NOT EXISTS的持续优化

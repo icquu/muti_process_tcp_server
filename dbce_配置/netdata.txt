@@ -1,0 +1,49 @@
+wget -O /tmp/netdata-kickstart.sh https://my-netdata.io/kickstart.sh && sh /tmp/netdata-kickstart.sh
+
+MySQL:
+CREATE USER 'netdata'@'localhost';
+GRANT USAGE, REPLICATION CLIENT, PROCESS ON *.* TO 'netdata'@'localhost';
+FLUSH PRIVILEGES;
+
+
+dnsmasq:
+Configuration
+Edit the go.d/dnsmasq.conf configuration file using edit-config from the Netdata config directory, which is typically at /etc/netdata.
+
+cd /etc/netdata # Replace this path with your Netdata config directory
+sudo ./edit-config go.d/dnsmasq.conf
+
+Needs only address, here is an example with two jobs:
+
+jobs:
+  - name: local
+    address: '127.0.0.1:53'
+
+  - name: remote
+    address: '203.0.113.0:53'
+
+For all available options, see the dnsmasq collector's configuration file.
+
+
+bind:
+bind version 9.9+ with configured statistics-channels
+statistics-channels {
+        inet 127.0.0.1 port 8653 allow { 127.0.0.1; };
+        inet ::1 port 8653 allow { ::1; };
+};
+
+isc bind:
+Configuration
+Edit the python.d/bind_rndc.conf configuration file using edit-config from the Netdata config directory, which is typically at /etc/netdata.
+
+cd /etc/netdata   # Replace this path with your Netdata config directory, if different
+sudo ./edit-config python.d/bind_rndc.conf
+
+Sample:
+
+local:
+  named_stats_path       : '/var/log/bind/named.stats'
+
+If no configuration is given, module will attempt to read named.stats file at /var/log/bind/named.stats
+
+mongodb, redis, memcached, proxysql, webserver

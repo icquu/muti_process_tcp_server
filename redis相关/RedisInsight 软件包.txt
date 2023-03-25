@@ -1,0 +1,40 @@
+1）下载 RedisInsight 软件包：
+
+https://redis.com/redis-enterprise/redis-insight/#insight-form
+
+[root@Redis ~]# ls
+anaconda-ks.cfg  redisinsight-linux64-1.11.0
+[root@Redis ~]# mkdir /usr/local/redisinsight
+[root@Redis ~]# mv redisinsight-linux64-1.11.0 /usr/local/redisinsight/redisinsight-1.11.0
+[root@Redis ~]# chmod +x /usr/local/redisinsight/redisinsight-1.11.0
+图片
+2）配置 RedisInsight 的环境变量
+
+[root@Redis ~]# echo "export REDISINSIGHT_HOST=192.168.1.1" >> ~/.bash_profile
+[root@Redis ~]# echo "export REDISINSIGHT_HOST_DIR=/usr/local/redisinsight/.redisinsight" >> ~/.bash_profile
+[root@Redis ~]# source ~/.bash_profile
+注解：
+
+REDISINSIGHT_PORT：配置 RedisInsight 的监听端口（default：8001）
+REDISINSIGHT_HOST：配置 RedisInsight 的 IP 地址（default：0.0.0.0）
+LOG_DIR：配置 RedisInsight 的日志存放路径（default：REDISINSIGHT_HOST_DIR）
+REDISINSIGHT_HOST_DIR：配置 RedisInsight 的数据存放路径（default：~/.redisinsight）
+3）启动 RedisInsight 服务
+
+[root@Redis ~]# nohup /usr/local/redisinsight/redisinsight-linux64-1.4.0 &  // 后台运行
+[root@Redis ~]# ps aux | grep redis            // 查看进程是否存在
+
+
+####################Congratulations########################
+Total OneinStack Install Time: 7 minutes
+
+Database install dir:           /usr/local/percona
+Database data dir:              /data/percona
+Database user:                  root
+Database password:              fdpZqQ0F
+
+redis install dir:              /usr/local/redis
+
+memcached install dir:          /usr/local/memcached
+
+Please restart the server and see if the services start up fine.

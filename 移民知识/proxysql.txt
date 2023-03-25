@@ -1,0 +1,15 @@
+安装 下载 ProxySQL 安装包: https://github.com/sysown/proxysql/releases
+
+https://github.com/sysown/proxysql/releases/download/v2.3.2/proxysql_2.3.2-debian11_amd64.deb
+
+
+
+insert into mysql_servers(hostgroup_id,hostname,port) values(10,'172.31.8.82',3306),(10,'172.31.0.154',3306)
+
+insert into mysql_servers(hostgroup_id,hostname,port) values(20,'172.31.8.82',3306)
+
+
+insert into mysql_users(username,password,default_hostgroup) values('fbd','DyR10ucTlC1uvS3-',10);
+insert into mysql_users(username,password,default_hostgroup) values('sqlsender','P@ssword1!',10);
+load mysql users to runtime;
+save mysql users to disk;

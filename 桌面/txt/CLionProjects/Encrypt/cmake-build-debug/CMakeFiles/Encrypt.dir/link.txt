@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/Encrypt.dir/main.c.o  -o Encrypt 

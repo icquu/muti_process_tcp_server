@@ -1,0 +1,163 @@
+FreeBSD13
+Message from gcc10-10.3.0:
+
+--
+To ensure binaries built with this toolchain find appropriate versions
+of the necessary run-time libraries, you may want to link using
+
+  -Wl,-rpath=/usr/local/lib/gcc10
+
+For ports leveraging USE_GCC, USES=compiler, or USES=fortran this happens
+transparently.
+root@unix:~ # gcc -v
+Using built-in specs.
+COLLECT_GCC=gcc
+COLLECT_LTO_WRAPPER=/usr/local/libexec/gcc10/gcc/x86_64-portbld-freebsd13.0/10.3.0/lto-wrapper
+Target: x86_64-portbld-freebsd13.0
+Configured with: /wrkdirs/usr/ports/lang/gcc10/work/gcc-10.3.0/configure --enable-multilib --with-build-config=bootstrap-debug --disable-nls --enable-gnu-indirect-function --enable-plugin --libdir=/usr/local/lib/gcc10 --libexecdir=/usr/local/libexec/gcc10 --program-suffix=10 --with-as=/usr/local/bin/as --with-gmp=/usr/local --with-gxx-include-dir=/usr/local/lib/gcc10/include/c++/ --with-ld=/usr/local/bin/ld --with-pkgversion='FreeBSD Ports Collection' --with-system-zlib --without-zstd --enable-languages=c,c++,objc,fortran --prefix=/usr/local --localstatedir=/var --mandir=/usr/local/man --infodir=/usr/local/share/info/gcc10 --build=x86_64-portbld-freebsd13.0
+Thread model: posix
+Supported LTO compression algorithms: zlib
+gcc version 10.3.0 (FreeBSD Ports Collection)
+
+
+Message from mysql80-client-8.0.29:
+
+--
+This is the mysql CLIENT without the server.
+for complete server and client, please install databases/mysql80-server
+=====
+Message from mysql80-server-8.0.29:
+
+--
+There is no initial password for first time use of MySQL.
+Keep in mind to reset it to a secure password.
+
+MySQL80 has a default /usr/local/etc/mysql/my.cnf,
+remember to replace it with your own
+or set `mysql_optfile="$YOUR_CNF_FILE` in rc.conf.
+
+
+netstat -c4n
+
+root@freebsd:~ # sysrc mysql_enable=yes
+root@freebsd:~ # service mysql-server start
+root@freebsd:~ # service mysql-server status
+root@freebsd:~ # sockstat -4l
+root@freebsd:~ # mysqladmin -u root -p version
+
+
+
+#!/bin/sh
+# 在我们开始之前清除列表。
+ipfw -q -f 刷新
+
+# 设置规则命令前缀
+cmd="ipfw -q 添加"
+pif="dc0" # 连接到 Internet 的 NIC 的接口名称
+
+
+在ports树中搜索需要的软件:
+root@unix:/usr/ports # make search name='sysbench'
+
+----------------------------
+
+Percona支持的Linux发行版: 
+debian
+redhat
+ubuntu
+
+Linux中的visio: dia
+
+安装必要的软件:
+pkg install sudo
+visudo ......
+
+安装kde桌面:
+pkg install xorg kde5 sddm plasma5-sddm-kcm
+
+xorg -configure
+cp xorg.conf.new /usr/local/etc/X11/xorg.conf
+vim /usr/local/etc/X11/xorg.conf
+vim /etc/rc.conf
+添加:
+dbus_enable="YES"
+hald_enable="YES"
+sddm_enable="YES"
+
+vim /etc/fstab
+添加:
+proc  /proc   procfs  0   0
+
+reboot ...
+
+
+升级系统:
+freebsd-update fetch
+freebsd-update install
+
+安装浏览器:
+pkg install firefox
+
+重新安装一个软件:
+doas pkg install -f libva
+doas pkg install -r poudriere -f libva
+
+清理无用软件包:
+doas pkg autoremove
+doas pkg clean
+
+安装xfce桌面:
+pkg install xfce slim slim-themes
+
+添加:
+dbus_enable="YES"
+hald_enalbe="YES"
+slim_enable="YES"
+
+配置启动命令:
+cd
+vim .xinitrc
+exec xfce4-session
+
+reboot ...
+
+脚本安装FreeBSD桌面:
+https://pan.baidu.com/s/1z3YRGC9z7VuVa0wmgPM26A?pwd=bdn7
+
+添加字定义软件源:
+vim /usr/local/etc/pkg/repos/poudriere.conf
+
+设置分辨率:
+vim /boot/loader.conf
+vim /usr/local/usr/X11/xorg.conf.d/20-intel.conf
+https://www.i-bsd.com/drm-console/
+
+取消开机启动延时:
+vim /boot/loader.conf
+添加:
+autoboot_delay=0
+
+安装桌面:
+官方参考链接:https://community.kde.org/FreeBSD/Setup
+pkg install sddm xorg kde5 drm-kmod wqy-fonts -y
+sysrc dbus_enable="YES"
+sysrc sddm_enable="YES"
+sysrc hald_enable="YES"
+
+修改用户所属组:
+sudo pw usermod briko -G video
+
+修改/boot/loader.conf
+添加:
+kern.vty=vt
+
+安装virtualbox虚拟环境下的驱动:
+pkg install ...
+
+sysrc vboxguest_enable="YES"
+sysrc vboxservice_enable="YES"
+
+把机器名加入hosts文件.
+
+FreeBSD下的虚拟化软件:
+bhyve

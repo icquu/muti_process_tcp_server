@@ -1,0 +1,156 @@
+国外成功的开源项目比较多，或许跟许多发达国家的程序员们的精神状态有关系。比如我认识的一些国外的黑客都非常心思单纯，热情似火。他们在精神上的束缚非常少，做起事来多是不拘一格。有的人即便长期没有工作单纯靠抵押和捐赠过活，也会不遗余力地投身于开源项目。而我接触到的国内许多程序员的精神负担一般比较重，经济上的压力也比较大，自然难有“玩开源”的心思。
+——https://moonbingbing.gitbooks.io/openresty-best-practices/content/base/intro.html
+
+
+创建目录：
+mkdir ~/openresty-test ~/openresty-test/logs/ ~/openresty-test/conf/
+
+创建自己的nginx.conf
+指定目录，启动nginx：
+/usr/local/openresty/bin/openresty -p ~/openresty-test/
+
+示例中已经可以完整的看到请求参数
+
+# 默认读取 body
+        lua_need_request_body on;
+        local data = ngx.req.get_body_data()
+
+http {
+    server {
+        listen    80;
+
+        location /test {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local data = ngx.req.get_body_data()
+                ngx.say("hello ", data)
+            }
+        }
+    }
+}
+
+
+如何优雅处理响应体过大的输出
+如果响应体比较小，这时候相对就比较随意。但是如果响应体过大（例如超过 2G），是不能直接调用 API 完成响应体输出的。响应体过大，分两种情况：
+
+输出内容本身体积很大，例如超过 2G 的文件下载
+输出内容本身是由各种碎片拼凑的，碎片数量庞大，例如应答数据是某地区所有人的姓名
+第①个情况，要利用 HTTP 1.1 特性 CHUNKED 编码来完成，一起来看看 CHUNKED 编码格式样例：
+参考下面的例子：
+
+location /test {
+    content_by_lua_block {
+        -- ngx.var.limit_rate = 1024*1024
+        local file, err = io.open(ngx.config.prefix() .. "data.db","r")
+        if not file then
+            ngx.log(ngx.ERR, "open file error:", err)
+            ngx.exit(ngx.HTTP_SERVICE_UNAVAILABLE)
+        end
+
+        local data
+        while true do
+            data = file:read(1024)
+            if nil == data then
+                break
+            end
+            ngx.print(data)
+            ngx.flush(true)
+        end
+        file:close()
+    }
+}
+按块读取本地文件内容（每次 1KB），并以流式方式进行响应。笔者本地文件 data.db 大小是 4G ， Nginx 服务可以稳定运行，并维持内存占用在 几MB 范畴。
+
+第②个情况，其实就是要利用 ngx.print 的特性了，它的输入参数可以是单个或多个字符串参数，也可以是 table 对象。
+
+参考官方示例代码：
+
+local table = {
+     "hello, ",
+     {"world: ", true, " or ", false,
+         {": ", nil}}
+ }
+ ngx.print(table)
+将输出：
+
+ hello, world: true or false: nil
+也就是说当有非常多碎片数据时，没有必要一定连接成字符串后再进行输出。完全可以直接存放在 table 中，用数组的方式把这些碎片数据统一起来，直接调用 ngx.print(table) 即可。这种方式效率更高，并且更容易被优化。
+
+标准日志输出
+OpenResty 的标准日志输出原句为 ngx.log(log_level, ...) ，几乎可以在任何 ngx_lua 阶段进行日志的输出。
+
+请看下面的示例：
+
+#user  nobody;
+worker_processes  1;
+
+error_log  logs/error.log error;    # 日志级别
+#pid        logs/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    server {
+        listen    80;
+        location / {
+            content_by_lua_block {
+                local num = 55
+                local str = "string"
+                local obj
+                ngx.log(ngx.ERR, "num:", num)
+                ngx.log(ngx.INFO, " string:", str)
+                print([[i am print]])
+                ngx.log(ngx.ERR, " object:", obj)
+            }
+        }
+    }
+}
+
+网络日志输出
+如果你的日志需要归集，并且对时效性要求比较高那么这里要推荐的库可能就让你很喜欢了。 lua-resty-logger-socket ，可以说很好的解决了上面提及的几个特性。
+
+lua-resty-logger-socket 的目标是替代 Nginx 标准的 ngx_http_log_module 以非阻塞 IO 方式推送 access log 到远程服务器上。对远程服务器的要求是支持 syslog-ng 的日志服务。
+
+引用官方示例：
+
+lua_package_path "/path/to/lua-resty-logger-socket/lib/?.lua;;";
+
+    server {
+        location / {
+            log_by_lua_block {
+                local logger = require "resty.logger.socket"
+                if not logger.initted() then
+                    local ok, err = logger.init{
+                        host = 'xxx',
+                        port = 1234,
+                        flush_limit = 1234,
+                        drop_limit = 5678,
+                    }
+                    if not ok then
+                        ngx.log(ngx.ERR, "failed to initialize the logger: ",
+                                err)
+                        return
+                    end
+                end
+
+                -- construct the custom access log message in
+                -- the Lua variable "msg"
+
+                local bytes, err = logger.log(msg)
+                if err then
+                    ngx.log(ngx.ERR, "failed to log message: ", err)
+                    return
+                end
+            }
+        }
+    }
+例举几个好处：
+
+基于 cosocket 非阻塞 IO 实现
+日志累计到一定量，集体提交，增加网络传输利用率
+短时间的网络抖动，自动容错
+日志累计到一定量，如果没有传输完毕，直接丢弃
+日志传输过程完全不落地，没有任何磁盘 IO 消耗
+

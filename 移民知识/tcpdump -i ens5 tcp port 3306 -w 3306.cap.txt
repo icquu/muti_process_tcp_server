@@ -1,0 +1,4 @@
+tcpdump -i ens5 tcp port 3306 -w 3306.cap
+
+pt-deadlock-logger --interval=3 u=root,P=3306,p="" --log=/root/deadlock.log
+

@@ -1,0 +1,16 @@
+# 导出信息：
+./mongoexport --slaveOk --db=hjgame --collection=user_playerinfo --out=playerinfo.csv --type=csv --query='{"platform" : "125"}' -f "snid,tel,totalcoin,alipayaccname,alipayaccount,bankaccname,bankaccount,coinpaytotal,coinexchangetotal,promotertree,beunderagentcode,createtime,deviceos,ip,city,channel,lastlogintime" -uhjgame -phj888 --host=192.168.1.52 --port=3017 --authenticationDatabase=admin
+# 指定查询条件文件进行数据导出：
+./mongoexport --slaveOk --db=hjgame --collection=user_playerinfo --out=playerinfo.csv --type=csv --queryFile=filter_mode -f "snid,tel,totalcoin,alipayaccname,alipayaccount,bankaccname,bankaccount,coinpaytotal,coinexchangetotal,promotertree,beunderagentcode,createtime,deviceos,ip,city,channel,lastlogintime" -uhjgame -phj888 --host=192.168.1.52 --port=3017 --authenticationDatabase=admin
+
+# 导出信息：
+./mongoexport --slaveOk --db=hjgame --collection=user_playerinfo --out=playerinfo.csv --type=csv --query='{"platform" : "125", "createtime" : {"$gte" : ISODate("2019-07-23T00:00:00.000+0800"), "$lt" : ISODate("2019-07-29T00:00:00.000+0800")}, "vip" : {"$gte" : NumberInt(1)}}' -f "snid,tel,totalcoin,alipayaccname,alipayaccount,bankaccname,bankaccount,coinpaytotal,coinexchangetotal,promotertree,beunderagentcode,createtime,deviceos,ip,city,channel,lastlogintime" -uhjgame -phj888 --host=192.168.1.52 --port=3017 --authenticationDatabase=admin
+
+# 导出指定库，指定集合数据：
+/usr/local/mongodb/bin/mongoexport --slaveOk --db=hjgame --collection=user_msg --out=user_msg.csv --type=json -uhjgame -phj888 --host=192.168.1.52 --port=3017 --authenticationDatabase=admin
+
+# 导入指定库，指定集合数据，原集合会被删除：
+/usr/local/mongodb/bin/mongoimport --quiet --db=hjgame --collection=user_msg --file=user_msg.csv --drop --type=json -uhjgame -phj888 --host=192.168.1.91 --port=3017 --authenticationDatabase=admin
+
+# 导出记录：
+./mongoexport --slaveOk --db=hjlog --collection=log_gamedetailed --out=log_gamedetailed.json --query='{"platform": "41" ,"gameid" : NumberInt(1), "time" : {"$gte" : ISODate("2019-07-12T00:00:00.000+0800"), "$lt" : ISODate("2019-07-27T00:00:00.000+0800")}}' -uhjgame -phj888 --host=192.168.1.52 --port=3017 --authenticationDatabase=admin

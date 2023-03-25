@@ -1,0 +1,9 @@
+pmm-server安装配置
+
+docker run -d -p 80:80 443:443 --name pmm-server --restart always percona/pmm-server:latest
+
+pmm-admin config --server-insecure-tls --server-url=https://admin:admin@172.31.46.222
+
+pmm-admin add mysql --username=root --password=DyR10ucTlC1uvS3- --server-url=http://admin:OXgx2s6r60J0MNEg@172.31.46.222:8011 --query-source=perfschema fbd_mysql 172.31.36.51:3306
+
+pmm-admin add mysql --username=root --password=DyR10ucTlC1uvS3- --server-url=http://admin:admin@172.31.46.222 --query-source=perfschema fbd_mysql_222 172.31.46.222:3306

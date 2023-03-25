@@ -1,0 +1,37 @@
+Linux系统中生成加盐的加密密码：
+apt install whois
+mkpasswd
+openssl passwd
+
+
+ root 密码安全
+为阻止人们使用 root 权限访问你的机器，你需要做下面的操作。
+
+阻止对硬盘的物理访问
+
+锁住 UEFI/ BIOS 来阻止从可移动介质启动
+
+为 GRUB 交互式会话设置密码
+
+锁住 GRUB 菜单，禁止编辑
+
+重设root密码的方法：
+如果可以物理访问硬盘，则可以使用下面的步骤，相对简单的重置密码。
+
+将硬盘拿到一个可以设置 UEFI/BIOS 从 CD 启动的电脑。
+
+使用紧急介质启动系统（Debian 启动磁盘, Knoppix CD, GRUB CD, …）。
+
+用读写访问挂载根分区。
+
+编辑根分区的"/etc/passwd"文件，使 root 账户条目的第二段为空。
+
+对于 grub-rescue-pc ，即使用紧急介质启动的电脑，如果有编辑 GRUB 菜单条目 (参见 第 3.1.2 节 “第二阶段：引载加载程序”) 的权限，在启动时，使用下面的步骤更加简单。
+
+使用内核参数启动系统来修改一些事情，比如说，"root=/dev/hda6 rw init=/bin/sh".
+
+编辑 "/etc/passwd" 文件，使 root 账户条目的第二段为空。
+
+重启系统。
+
+系统的 root shell 现在可以无密码访问了。

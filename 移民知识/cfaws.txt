@@ -1,0 +1,20 @@
+cf:
+OscarMarlenetee63@gmail.com
+gHzoyKz7^QoX2mwBJkgP
+
+
+aws:
+glandular662502234@gmail.com
+HSzkEoIaVp3KP6%O
+
+Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
+ami-08ee6644906ff4d6c (64 位(x86)) / ami-0f3b400f4ed1c4eda (64 位(ARM))
+
+
+debian-11-amd64-daily-20220421-986
+ami-05996441da12d418a
+Debian 11 (daily build 20220421-986)
+
+g++ -o test_dbpool test_dbpool.cpp connection_pool.cpp -I /opt/liitdar/mysql-connector-c++-8.0.11-linux-el7-x86-64bit/include/jdbc/ -L /opt/liitdar/mysql-connector-c++-8.0.11-linux-el7-x86-64bit/lib64/ -lmysqlcppconn
+
+https://git.oschina.net/ivan_allen

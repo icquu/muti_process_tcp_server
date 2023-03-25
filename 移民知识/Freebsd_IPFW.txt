@@ -1,0 +1,17 @@
+Freebsd_IPFW
+net.inet.ip.fw.default_to_accept: 1
+
+root@unix:~ # sysctl -w net.inet.ip.fw.default_to_accept=0
+sysctl: oid 'net.inet.ip.fw.default_to_accept' is a read only tunable
+sysctl: Tunable values are set in /boot/loader.conf
+
+root@unix:~ # cat /boot/loader.conf
+security.bsd.allow_destructive_dtrace=0
+kern.geom.label.disk_ident.enable="0"
+kern.geom.label.gptid.enable="0"
+cryptodev_load="YES"
+zfs_load="YES"
+net.inet.ip.fw.default_to_accept="1"
+
+在/boot/loader.conf中加入net.inet.ip.fw.default_to_accept="1",可以让ipfw默认放行所有流量.
+但这是个只读参数,加入这个配置后,需要重启系统才能生效.

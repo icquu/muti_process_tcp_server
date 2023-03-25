@@ -1,0 +1,25 @@
+更安全的Linux网络：
+当有PortScan攻击行为发生时，将攻击者的IP锁定，使得该IP在10分钟内都不得连接本机的任何服务:
+#!/bin/bash
+iptables -P INPUT DROP
+iptables -F
+iptables -A INPUT -p tcp --syn -m recent --name PortScan --update --second 600 --hitcount 10 -j DROP
+iptables -A INPUT -p tcp --syn -m state --state NEW -m multiport --dports 22,3306,27017,9090 -j ACCEPT
+iptables -A INPUT -p tcp --syn -m recent --set --name PortScan
+----------------------------------
+防火墙性能优化
+1.调整顺序
+2.善用multiport和iprange模块
+3.使用User Define Chain
+减低无效匹配次数就达到了优化性能的目的。
+Netfilter连接处理能力与内存消耗
+/proc/sys/net/ipv4/ip_conntrack_max文件限制ip_conntrack模块所能追踪的最大连接数量，默认值会随着硬件内存大小有所改变。在官方网站上提供了一个简单的计算方式，即CONNTRACK_MAX = RAMSIZE(in bytes)/16384/(x/32)，x为操作系统的位数。512MB的内存，系统默认值是32768，如果/var/log/messages文件内看到"ip_conntrack: table full, dropping packet"的错误信息，不过就一般企业而言，在正常使用下，32768的连接数量一般是足够的。
+如果预设追踪数量不足，只要改以手动的方式来加载ip_conntrack模块，并通过参数来通知ip_conntrack模块我们所需的连接追踪数量即可，操作方式如下：
+	modprobe ip_conntrack hashsize=16384
+其中，hashsize = 所需的连接追踪数量/8，如我们需要的连接追踪数量为131072，因此hashsize=131072/8=16384，这样，/proc/sys/net/ipv4/ip_conntrack_max文件内的值就会自动调整为131072了。这些追踪数据会消耗多少内存呢，答案就在/var/log/messages的文件内，当我们加载ip_conntrack模块时，Kernel会在/var/log/messages文件内产生一条log，这笔记录如下：
+ip_conntrack version 2.4 (16384 buckets, 131072 max) - 228 bytes per conntrack
+
+使用RAW Table
+ip_conntrack模块预设自动追踪所有连接，可以靠RAW Table不让ip_conntack模块去追踪符合规则的通讯，例如不想让ip_conntrack模块追踪eth2到eth1这个方向的SMTP协议，可以在RAW Table中加入以下规则，即可避免被ip_conntrack追踪。
+	iptables -t raw -A PREROUTING -i eth2 -o eth1 -p tcp --dport 25 -j NOTRACK
+简单和复杂通讯的处理

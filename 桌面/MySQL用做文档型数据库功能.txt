@@ -1,0 +1,404 @@
+连接到MySQLx
+mysqlsh root@localhost:33060/world_x
+\connect root@localhost:33060/world_x
+\py
+mysql-py> db.get_collections()
+[
+    <Collection:countryinfo>
+]
+mysql-py> db.countryinfo.find().limit(1)
+msyql-py> db.countryinfo.add(
+ {
+    "GNP": .6,
+    "IndepYear": 1967,
+    "Name": "Sealand",
+    "Code:": "SEA",
+    "demographics": {
+        "LifeExpectancy": 79,
+        "Population": 27
+    },
+    "geography": {
+        "Continent": "Europe",
+        "Region": "British Islands",
+        "SurfaceArea": 193
+    },
+    "government": {
+        "GovernmentForm": "Monarchy",
+        "HeadOfState": "Michael Bates"
+    }
+  }
+)
+Query OK, 1 item affected (0.0405 sec)
+msyql-py> db.countryinfo.find("Code = 'SEA'")
+
+mysql-py> db.countryinfo.find("GNP > 500000")
+...[output removed]
+10 documents in set (0.00 sec)
+
+mysql-py> db.countryinfo.find("GNP > 500000 and demographics.Population < 100000000")
+...[output removed]
+6 documents in set (0.00 sec)
+
+mysql-py> db.countryinfo.find("GNP*1000000/demographics.Population > 30000")
+...[output removed]
+
+mysql-py> db.countryinfo.find("Name = :country").bind("country", "Italy")
+{
+    "GNP": 1161755,
+    "_id": "00005de917d8000000000000006a",
+    "Code": "ITA",
+    "Name": "Italy",
+    "Airports": [],
+    "IndepYear": 1861,
+    "geography": {
+        "Region": "Southern Europe",
+        "Continent": "Europe",
+        "SurfaceArea": 301316
+    },
+    "government": {
+        "HeadOfState": "Carlo Azeglio Ciampi",
+        "GovernmentForm": "Republic"
+    },
+    "demographics": {
+        "Population": 57680000,
+        "LifeExpectancy": 79
+    }
+}
+1 document in set (0.01 sec)
+
+mysql-py> myFind = db.countryinfo.find("Name = :country")
+mysql-py> myFind.bind('country', 'France')
+{
+    "GNP": 1424285,
+    "_id": "00005de917d80000000000000048",
+    "Code": "FRA",
+    "Name": "France",
+    "IndepYear": 843,
+    "geography": {
+        "Region": "Western Europe",
+        "Continent": "Europe",
+        "SurfaceArea": 551500
+    },
+    "government": {
+        "HeadOfState": "Jacques Chirac",
+        "GovernmentForm": "Republic"
+    },
+    "demographics": {
+        "Population": 59225700,
+        "LifeExpectancy": 78.80000305175781
+    }
+}
+1 document in set (0.0028 sec)
+
+mysql-py> myFind.bind('country', 'Germany')
+{
+    "GNP": 2133367,
+    "_id": "00005de917d80000000000000038",
+    "Code": "DEU",
+    "Name": "Germany",
+    "IndepYear": 1955,
+    "geography": {
+        "Region": "Western Europe",
+        "Continent": "Europe",
+        "SurfaceArea": 357022
+    },
+    "government": {
+        "HeadOfState": "Johannes Rau",
+        "GovernmentForm": "Federal Republic"
+    },
+    "demographics": {
+        "Population": 82164700,
+        "LifeExpectancy": 77.4000015258789
+    }
+}
+
+1 document in set (0.0026 sec)
+
+mysql-py> db.countryinfo.find("GNP > 5000000").fields(["GNP", "Name"])
+[
+    {
+        "GNP": 8510700,
+        "Name": "United States"
+    }
+]
+1 document in set (0.00 sec)
+
+mysql-py> db.countryinfo.find().fields(
+mysqlx.expr('{"Name": upper(Name), "GNPPerCapita": GNP*1000000/demographics.Population}')).limit(2)
+{
+    "Name": "ARUBA",
+    "GNPPerCapita": 8038.834951456311
+}
+{
+    "Name": "AFGHANISTAN",
+    "GNPPerCapita": 263.0281690140845
+}
+
+mysql-py> db.countryinfo.find().limit(5)
+
+mysql-py> db.countryinfo.find().sort(["IndepYear desc"]).limit(8)
+... [output removed]
+
+mysql-py> db.countryinfo.find().sort(["IndepYear desc"]).limit(8).skip(1)
+... [output removed]
+
+
+Query OK, 1 item affected (0.0092 sec)
+--------------------------------------
+modify:
+mysql-py> db.countryinfo.modify("Code = 'SEA'").set("demographics", {"LifeExpectancy": 78, "Population": 28})
+Query OK, 1 item affected (0.0092 sec)
+
+mysql-py> db.countryinfo.find("Code = 'SEA'")
+{
+    "GNP": 0.6,
+    "_id": "00005ecf7ecc0000000000000001",
+    "Code": "SEA",
+    "Name": "Sealand",
+    "IndepYear": 1967,
+    "geography": {
+        "Region": "British Islands",
+        "Continent": "Europe",
+        "SurfaceArea": 193
+    },
+    "government": {
+        "HeadOfState": "Michael Bates",
+        "GovernmentForm": "Monarchy"
+    },
+    "demographics": {
+        "Population": 28,
+        "LifeExpectancy": 78
+    }
+}
+1 document in set (0.0009 sec)
+
+mysql-py> db.countryinfo.modify("Name = 'Sealand'").unset("GNP")
+
+mysql-py> db.countryinfo.find("Name = 'Sealand'")
+{
+    "_id": "00005e2ff4af00000000000000f4",
+    "Name": "Sealand",
+    "Code:": "SEA",
+    "IndepYear": 1967,
+    "geography": {
+        "Region": "British Islands",
+        "Continent": "Europe",
+        "SurfaceArea": 193
+    },
+    "government": {
+        "HeadOfState": "Michael Bates",
+        "GovernmentForm": "Monarchy"
+    },
+    "demographics": {
+        "Population": 27,
+        "LifeExpectancy": 79
+    }
+}
+
+mysql-py> db.countryinfo.modify("true").set("Airports", [])
+
+mysql-py> db.countryinfo.modify("Name = 'France'").array_append("$.Airports", "ORY")
+
+mysql-py> db.countryinfo.find("Name = 'France'")
+{
+    "GNP": 1424285,
+    "_id": "00005de917d80000000000000048",
+    "Code": "FRA",
+    "Name": "France",
+    "Airports": [
+        "ORY"
+    ],
+    "IndepYear": 843,
+    "geography": {
+        "Region": "Western Europe",
+        "Continent": "Europe",
+        "SurfaceArea": 551500
+    },
+    "government": {
+        "HeadOfState": "Jacques Chirac",
+        "GovernmentForm": "Republic"
+    },
+    "demographics": {
+        "Population": 59225700,
+        "LifeExpectancy": 78.80000305175781
+    }
+}
+
+mysql-py> db.countryinfo.modify("Name = 'France'").array_insert("$.Airports[0]", "CDG")
+
+mysql-py> db.countryinfo.modify("Name = 'France'").array_delete("$.Airports[1]")
+
+CollectionFindFunction
+  ::= '.find(' SearchConditionStr? ')' ( '.fields(' ProjectedDocumentExprStr ')' )?
+      ( '.groupBy(' SearchExprStrList ')' )? ( '.having(' SearchConditionStr ')' )?
+      ( '.sort(' SortExprStrList ')' )? ( '.limit(' NumberOfRows ')' ( '.offset(' NumberOfRows ')' )? )?
+      ( '.lockExclusive(' LockContention ')' | '.lockShared(' LockContention ')' )? 
+      ( '.bind(' PlaceholderValues ')' )*
+      ( '.execute()' )?
+
+CollectionModifyFunction
+  ::= '.modify(' SearchConditionStr ')'
+      ( '.set(' CollectionField ',' ExprOrLiteral ')' |
+        '.unset(' CollectionFields ')' |
+        '.arrayInsert(' CollectionField ',' ExprOrLiteral ')' |
+        '.arrayAppend(' CollectionField ',' ExprOrLiteral ')' |
+        '.arrayDelete(' CollectionField ')' |
+        '.patch(' DocumentOrJSON ')'
+      )+
+      ( '.sort(' SortExprStrList ')' )? ( '.limit(' NumberOfRows ')' )?
+      ( '.bind(' PlaceholderValues ')' )*
+      ( '.execute()' )?
+
+CollectionAddFunction
+    ::= ( '.add(' ( DocumentOrJSON | '[' DocumentOrJSON ( ',' DocumentOrJSON )* ']' )? ')' )+
+        ( '.execute()' )?
+
+CollectionRemoveFunction
+    ::= '.remove(' SearchConditionStr ')'
+        ( '.sort(' SortExprStrList ')' )? ( '.limit(' NumberOfRows ')' )?
+        ( '.bind(' PlaceholderValues ')' )*
+        ( '.execute()' )?
+
+mysql-py> db.countryinfo.remove("Code = 'SEA'")
+mysql-py> db.countryinfo.remove("true").limit(1)
+mysql-py> db.countryinfo.remove("true").sort(["Name desc"]).limit(1)
+
+
+CollectionCreateIndex
+    ::= '.createIndex(' StringLiteral ',' DocumentOrJSON ')'
+
+mysql-py> db.countryinfo.find("demographics.Population < 100")
+...[output removed]
+8 documents in set (0.00 sec)
+mysql-py> db.countryinfo.createIndex("popul", {fields: [{field: '$.demographics.Population', type: 'INTEGER'}]})
+mysql-py> db.countryinfo.create_index("name",{"fields": [{"field": "$.Name", "type": "TEXT(40)", "required": True}], "unique": True})
+
+
+CollectionDropIndex
+    ::= '.dropIndex(' StringLiteral ')'
+
+mysql-py> db.countryinfo.drop_index("popul")
+
+mysql-py> db.get_tables()
+[
+    <Table:city>, 
+    <Table:country>, 
+    <Table:countrylanguage>
+]
+mysql-py> db.get_collections()
+[
+    <Collection:countryinfo>
+]
+
+mysql-py> db.city.insert("ID", "Name", "CountryCode", "District", "Info").values(
+None, "Olympia", "USA", "Washington", '{"Population": 5000}')
+
+mysql-py> db.city.insert("ID", "Name", "CountryCode").values(
+None, "Little Falls", "USA").values(None, "Happy Valley", "USA")
+
+mysql-py> db.city.select()
++------+------------+-------------+------------+-------------------------+
+| ID   | Name       | CountryCode | District   | Info                    |
++------+------------+-------------+------------+-------------------------+
+|    1 | Kabul      | AFG         | Kabol      |{"Population": 1780000}  |
+|    2 | Qandahar   | AFG         | Qandahar   |{"Population": 237500}   |
+|    3 | Herat      | AFG         | Herat      |{"Population": 186800}   |
+...    ...          ...           ...          ...
+| 4079 | Rafah      | PSE         | Rafah      |{"Population": 92020}    |
++------+------- ----+-------------+------------+-------------------------+
+4082 rows in set (0.01 sec)
+
+mysql-py> db.city.select(["Name", "CountryCode"])
++-------------------+-------------+
+| Name              | CountryCode |
++-------------------+-------------+
+| Kabul             | AFG         |
+| Qandahar          | AFG         |
+| Herat             | AFG         |
+| Mazar-e-Sharif    | AFG         |
+| Amsterdam         | NLD         |
+...                 ...
+| Rafah             | PSE         |
+| Olympia           | USA         |
+| Little Falls      | USA         |
+| Happy Valley      | USA         |
++-------------------+-------------+
+4082 rows in set (0.00 sec)
+
+mysql-py> db.city.select(["Name", "CountryCode"]).where("Name like 'Z%'")
++-------------------+-------------+
+| Name              | CountryCode |
++-------------------+-------------+
+| Zaanstad          | NLD         |
+| Zoetermeer        | NLD         |
+| Zwolle            | NLD         |
+| Zenica            | BIH         |
+| Zagazig           | EGY         |
+| Zaragoza          | ESP         |
+| Zamboanga         | PHL         |
+| Zahedan           | IRN         |
+| Zanjan            | IRN         |
+| Zabol             | IRN         |
+| Zama              | JPN         |
+| Zhezqazghan       | KAZ         |
+| Zhengzhou         | CHN         |
+...                 ...
+| Zeleznogorsk      | RUS         |
++-------------------+-------------+
+59 rows in set (0.00 sec)
+
+mysql-py> db.city.select(["Name", "CountryCode"]).where(
+"Name like :name").bind("name", "Z%")
+
+mysql-py> db.city.select(["Name", "CountryCode"]).where(
+"Name like 'Z%' and CountryCode = 'CHN'")
++----------------+-------------+
+| Name           | CountryCode |
++----------------+-------------+
+| Zhengzhou      | CHN         |
+| Zibo           | CHN         |
+| Zhangjiakou    | CHN         |
+| Zhuzhou        | CHN         |
+| Zhangjiang     | CHN         |
+| Zigong         | CHN         |
+| Zaozhuang      | CHN         |
+...              ...
+| Zhangjiagang   | CHN         |
++----------------+-------------+
+22 rows in set (0.01 sec)
+
+mysql-py> db.city.select(["Name", "CountryCode"]).where(
+"Name like 'Z%' and (CountryCode = 'CHN' or CountryCode = 'RUS')")
++-------------------+-------------+
+| Name              | CountryCode |
++-------------------+-------------+
+| Zhengzhou         | CHN         |
+| Zibo              | CHN         |
+| Zhangjiakou       | CHN         |
+| Zhuzhou           | CHN         |
+...                 ...
+| Zeleznogorsk      | RUS         |
++-------------------+-------------+
+29 rows in set (0.01 sec)
+
+mysql-py> db.country.select(["Code", "Name"]).order_by(["Name desc"]).limit(3).offset(1)
++------+------------+
+| Code | Name       |
++------+------------+
+| ZMB  | Zambia     |
+| YUG  | Yugoslavia |
+| YEM  | Yemen      |
++------+------------+
+3 rows in set (0.00 sec)
+
+mysql-py> db.city.update().set("Name", "Beijing").where("Name = 'Peking'")
+
+mysql-py> db.city.delete().where("Name = 'Olympia'")
+
+mysql-py> db.city.delete().limit(1)
+
+mysql-py> db.drop_collection("citytest")
+-----------------------------------------
+innodb cluster -> cluster
+group replication -> repset
+replication -> rsync

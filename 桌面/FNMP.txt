@@ -1,0 +1,122 @@
+FNMP
+
+weixin_30852451
+
+Table of Contents
+平台
+FNMP安装
+FNMP配置
+php配置
+mysql配置
+nginx配置
+phpMyAdmin配置
+
+平台
+freeBSD 12.0
+
+
+FNMP安装
+php安装
+version: 7.3.0
+
+sudo pkg install php73 php73-mysqli
+mysql安装
+version: 8.0.12 Source distribution
+
+sudo pkg install mysql80-server
+nginx安装
+version: 1.14.2
+
+sudo pkg install nginx
+phpMyAdmin安装
+version: 4.8.4
+
+sudo pkg install phpMyAdmin
+
+FNMP配置
+
+php配置
+创建php.ini
+
+cd /usr/local/etc/
+sudo cp php.ini-production php.ini
+修改www.conf
+
+cd /usr/local/etc/php-fpm.d
+sudo vim www.conf
+去掉如下注释
+
+;listen.owner = www
+;listen.group = www
+;listen.mode = 0660
+配置php_fpm自启动
+
+sudo sysrc php_fpm_enable=yes
+sudo service php-fpm start
+
+mysql配置
+配置mysql自启动
+
+sudo sysrc mysql_enable=yes
+sudo service mysql-server start
+使用脚本检测MySQL配置是否安全
+
+sudo mysql_secure_installation
+根据提示自己选择是否设置，然后重启服务。
+
+
+nginx配置
+修改配置文件nginx.conf
+
+cd /usr/local/etc/nginx/
+sudo vim nginx.conf
+具体配置
+把网站根目录设置在/www/nginx
+
+events {
+    worker_connections  1024;
+    use kqueue;     #add
+}
+ 
+location / {
+    root /www/nginx;
+    index index.html index.htm index.php; #add
+}
+ 
+location ~ \.php$ {
+    root /www/nginx;
+    fastcgi_pass 127.0.0.1:9000;
+    fastcgi_index SCRIPT_FILENAME /www/nginx$fastcgi_script_name; //modify
+    include fastcgi_params;
+}
+配置nginx自启
+
+sudo sysrc nginx_enable=yes
+sudo service nginx start
+
+phpMyAdmin配置
+建立phpMyAdmin到Nginx服务器根目录软连接
+
+sudo ln -s /usr/local/www/phpMyAdmin /www/nginx
+配置php.ini
+取消注释
+
+;session.save_path = "/tmp"
+配置nginx.conf
+增加配置
+
+location /phpMyAdmin {
+    alias /www/nginx/phpMyAdmin;
+    index index.php;
+    location ~ ^/phpMyAdmin/.+\.php$ {
+        alias /www/nginx/phpMyAdmin;
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_params SCRIPT_FILENAME /www/nginx$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
+若登入phpMyAdmin，MySQL必须如此创建用户
+
+create user 'username'@'localhost' identified with mysql_native_password by 'password';
+转载于:https://www.cnblogs.com/eat-and-die/p/10253256.html

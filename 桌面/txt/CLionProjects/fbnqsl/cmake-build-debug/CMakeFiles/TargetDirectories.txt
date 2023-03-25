@@ -1,0 +1,3 @@
+/home/kali/CLionProjects/fbnqsl/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/kali/CLionProjects/fbnqsl/cmake-build-debug/CMakeFiles/fbnqsl.dir
+/home/kali/CLionProjects/fbnqsl/cmake-build-debug/CMakeFiles/edit_cache.dir

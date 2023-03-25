@@ -1,0 +1,52 @@
+FreeBSD安装驱动和桌面:
+pkg install nano
+配置镜像源:
+https://mirrors.ustc.edu.cn/freebsd.pkg/
+FreeBSD pkg包管理器的官方源配置是 /etc/pkg/FreeBSD.conf ,其中 url 参数配置了官方仓库的地址, 我们需要把它替换为镜像站的地址.因为该配置文件会随着freebsd-update更新,我们为了避免更新后的麻烦,创建 /usr/local/etc/pkg/repos/FreeBSD.conf 覆盖默认配置即可,文件内容如下:
+FreeBSD: {
+	url: "pkg+http://mirrors.ustc.edu.cn/freebsd-pkg/${ABI}/quarterly"
+}
+
+如果要使用滚动更新的lastest仓库,把url配置的最后的quarterly换成latest即可.
+修改配置后,运行 pkg update -f 更新索引.
+
+安装显卡驱动:
+pkg search drm
+pkg install drm-devel-kmod
+安装完成后,系统会给出配置提示:
+大概意思是修改/etc/rc.conf,根据不同显卡分别加入不同配置行:
+--------
+For amdgpu: kld_list="amdgpu"
+For Intel: kld_list="i915kms"
+For radeonkms: kld_list="radeonkms"
+--------
+如果使用了amd的显卡并使用了UEFI引导系统,可能还需要修改/boot/loader.conf文件,添加下面一行:
+hw.syscons.disable=1
+在显卡驱动加载前,就无法使用字符终端了.
+
+还需要把我们要使用图形界面的用户的用户加入video组
+
+usermod -G video '用户名'
+
+安装kde或者xfce或者gnome:
+pkg install xorg
+pkg isntall x11/kde5
+需要修改一下fstab文件:
+加入下面的一行:
+proc	/proc	procfs	sw	0	0
+
+修改/etc/rc.conf
+加入下面两行:
+dbus_enable="YES"
+hald_enable="YES"
+
+安装sddm登录界面:
+pkg install sddm
+修改/etc/rc.conf
+加入下面一行:
+sddm_enable="YES"
+
+重启后,KDE图形界面可以使用了.
+
+
+

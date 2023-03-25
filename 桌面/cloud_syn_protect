@@ -1,0 +1,57 @@
+iptables -nvL|grep -i synproxy
+if [[ 0 -ne $? ]]; then
+iptables -t raw -A PREROUTING -i eth0 -p tcp --tcp-flags FIN,SYN,RST,ACK SYN -j CT --notrack
+iptables -I INPUT -i eth0 -p tcp -m state --state INVALID -j DROP
+iptables -I INPUT -i eth0 -p tcp -m state --state INVALID,UNTRACKED -j SYNPROXY --sack-perm --timestamp --wscale 7 --mss 1460
+iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+sysctl -w net/netfilter/nf_conntrack_tcp_loose=0
+sysctl -w net/ipv4/tcp_timestamps=1
+sysctl -w net/netfilter/nf_conntrack_max=2000000
+sh -c 'echo 2000000 > /sys/module/nf_conntrack/parameters/hashsize'
+fi
+
+grep iptables /etc/rc.d/rc.local
+if [[ 0 -ne $? ]]; then
+cat >> /etc/rc.d/rc.local << EOF
+iptables -t raw -A PREROUTING -i eth0 -p tcp --tcp-flags FIN,SYN,RST,ACK SYN -j CT --notrack
+iptables -I INPUT -i eth0 -p tcp -m state --state INVALID -j DROP
+iptables -I INPUT -i eth0 -p tcp -m state --state INVALID,UNTRACKED -j SYNPROXY --sack-perm --timestamp --wscale 7 --mss 1460
+iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+sysctl -w net/netfilter/nf_conntrack_tcp_loose=0
+sysctl -w net/ipv4/tcp_timestamps=1
+sysctl -w net/netfilter/nf_conntrack_max=2000000
+sh -c 'echo 2000000 > /sys/module/nf_conntrack/parameters/hashsize'
+EOF
+systemctl enable rc-local.service
+chmod +x /etc/rc.d/rc.local
+fi
+
+systemctl enable --now cockpit.socket
+history -c
+
+-----------------------------------------------------------------------
+
+如何查找Linux下的大目录
+du -h --max-depth=1 / | sort -nr 
+
+
+Linux查找大文件
+find . -type f -size +800M  -print0 | xargs -0 du -h | sort -nr
+
+Linux中查看socket状态：
+cat /proc/net/sockstat #（这个是ipv4的）
+
+
+vmstat 1查看系统负载，发现us、sy很高，加起来达到100%。而且，in/cs比平时高出很多。平时都是2000-6000左右，现在跑到10000多
+
+
+使用pidstat查看进程使用磁盘的情况
+pidstat -d 1
+
+
+explain 
+WITH recursive r AS
+(select snid, invitesnid,point,pos,platform, 0 as level_d FROM db_alliance_players WHERE snid=2037910
+        UNION ALL
+        SELECT d.snid, d.invitesnid,d.point,d.pos,d.platform, r.level_d+1 AS level_d FROM db_alliance_players d INNER JOIN r ON d.snid = r.invitesnid and r.invitesnid > 0
+)SELECT snid,point,pos,platform,level_d FROM r;

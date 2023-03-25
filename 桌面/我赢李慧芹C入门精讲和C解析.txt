@@ -1,0 +1,328 @@
+C语言学习建议：
+	概念正确性
+	动手能力
+	阅读优秀的程序段
+
+C课程讲解思路
+	基本概念
+	数据类型，运算符和表达式
+	输入输出专题
+	流程控制
+	数组
+	指针
+	函数
+	构造类型
+	动态内存管理
+	调试工具和调试技巧(gdb,make)
+	常用库函数
+
+#include <stdlib.h>
+void exit(int status)
+
+#include <stdio.h>
+#include <stdlib.h>
+int main(int argc, char **argv){
+	printf("hello world");
+	exit(0);
+}
+
+gcc -o //链接
+gcc -c //编译
+gcc -S //汇编
+gcc -E //预处理
+
+也可以简单的使用gcc <源文件>。
+配置vim，vi
+编辑 .vimrc
+ctrl+p自动补齐
+shift+k获取manpage
+
+
+void*可以赋值给任意类型的变量。
+
+谁申请谁释放
+谁打开谁关闭
+
+void* malloc(size_t size);
+返回值不需要强制转换。
+预防野指针的方法，free后，将指针变量赋值为NULL。
+
+makefile的简单写法，了解即可，现在有了更方便的cmake工具，可以帮助我们生成makefile文件.
+------------------------------------
+mytool:main.o tool1.o tool2.o
+	gcc main.o tool1.o tool2.o
+
+main.o:main.c
+	gcc main.c -c -o main.o
+
+tool1.o:tool1.c
+	gcc tool1.c -c -Wall -g -o tool1.o
+
+tool2.o:tool2.c
+	gcc tool2.c -c -Wall -g -o tool2.o
+
+clean:
+	rm *.o mytool -rf
+------------------------------------
+
+OBJS=main.o tool1.o tool2.o
+CC=gcc
+CFLAGS+=-c -Wall -g
+
+mytool:$(OBJS)
+	$(CC) $(OBJS) -o mytool
+
+main.o:main.c
+	$(CC) main.c $(CFLAGS) -o main.o
+
+tool1.o:tool1.c
+	$(CC) tool1.c $(CFLAGS) -o tool1.o
+
+tool2.o:tool2.c
+	$(CC) tool2.c $(CFLAGS) -o tool2.o
+
+clean:
+	$(RM) *.o mytool -r
+-------------------------------------
+
+OBJS=main.o tool1.o tool2.o
+CC=gcc
+CFLAGS+=-c -Wall -g
+
+mytool:$(OBJS)
+	$(CC) $^ -o $@
+
+main.o:main.c
+	$(CC) $^ $(CFLAGS) -o $@
+
+tool1.o:tool1.c
+	$(CC) %^ $(CFLAGS) -o $@
+
+tool2.o:tool2.c
+	$(CC) $^ $(CFLAGS) -o $@
+
+clean:
+	$(RM) *.o mytool -r
+---------------------------------
+OBJS=main.o tool1.o tool2.o
+CC=gcc
+CFLAGS+=-c -Wall -g
+
+mytool:$(OBJS)
+	$(CC) $^ -o $@
+
+%.o:%.c
+	$(CC) $^ $(CFLAGS) -o $@
+
+clean:
+	$(RM) *.o mytool -r
+----------------------------------
+
+静态库和动态库的实现：
+静态库：
+libxx.a
+xx 指代库名
+
+ar -cr libxx.a yyy.o
+
+发布到
+/usr/local/include
+/usr/local/lib
+
+gcc -L/usr/local/lib/ -o main main.o -lxx 
+-l参数需要写在最后，有依赖，被依赖的写后面，对顺序有要求。
+
+动态库：
+libxx.so
+gcc -shared -fPIC -o libxx.so yyy.c
+gcc -shared -fpic -o libxx.so yyy.c
+
+发布到
+/usr/local/include
+/usr/local/lib
+
+在 /etc/ld.so.conf 中添加路径
+/sbin/ldconfig 重读 /etc/ld.so.conf
+
+使用：
+gcc -I/usr/local/include -L/usr/local/lib -o ... -lxx
+
+非root用户发布：
+cp xx.so ~/lib
+export LD_LIBRARY_PATH=~/lib
+
+项目：ipv4视频广播系统需要系统编程部分的知识：
+进程的终止：
+从main函数返回
+调用exit
+调用_exit或_Exit
+最后一个线程返回
+最后一个线程调用pthread_exit.
+
+异常终止：
+调用abort
+接到一个信号并终止。
+最后一个线程对其取消请求作出响应。
+
+atexit() on_exit()注册退出函数。
+注册的退出函数会以压栈的方式进入队列并并在退出时执行。
+
+exit会执行注册的钩子函数。
+_exit不会执行注册的退出函数。
+
+命令行参数的分析：
+#include <unistd.h>
+getopt();
+getopt_long();
+
+手工装载库
+#include <dlfcn.h>
+void *dlopen(const char *filename, int flag);
+
+
+Link with -ldl
+
+goto不能跨函数跳转，因为上下文没有切换
+setjmp，longjmp可以跨函数跳转。但还有信号的问题需要留意。
+getenv setenv 是否全局改变了系统env还是只是改变了当前进程的env,我的初始判断是当前进程的env
+
+struct dirent {
+	ino_t d_ino;
+	off_t d_off;
+	unsigned short d_reclem;
+	unsigned char d_type;
+	char d_name[256];
+}
+
+mydu.c
+
+伟康通信有限公司Wicam
+
+p196 多任务计时器anytime实现:
+指令的原子性,和数据库的acid要解决的问题是一样的.
+#define JOB_MAX 1024
+static volatile sig_atomic_t token = 0;
+
+sig_atomic_t //定义对这个变量的操作是原子操作.
+int Add_Job(){
+
+}
+int Cancel_Job(){
+
+}
+
+int Wait_job(int id){
+
+}
+
+int pause_Job(){
+
+}
+
+int resume_Job(){
+
+}
+
+p197 setitimer及相关函数
+setitimer();// 有更灵活的使用方式
+#include <sys/time.h>
+int getitimer(int which, struct itimerval *curr_value);
+int setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value);
+
+struct itimerval {
+	struct timeval it_interval;
+	struct timeval it_value;
+};
+
+struct timeval {
+	long tv_sec;
+	long tv_usec;
+};
+在有信号注册的程序中使用system()函数, 在调用期间,需要锁死SIGCHLD,并忽略SIGINT SIGQUIT
+可以使用nanosleep或者usleep替换sleep
+
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
+void FD_CLR(int fd, fd_set *set);
+int FD_ISSET(int fd, fd_set *set);
+void FD_SET(int fd, fd_set *set);
+void FD_ZERO(fd_set *set);
+
+#include <sys/select.h>
+int pselect...
+
+p198 信号集
+#include <signal.h>
+int sigemptyset(sigset_t *set);
+int sigfillset(sigset_t *set);
+int sigaddset(sigset_t *set, int signum);
+int sigdelset(sigset_t *set, int signum);
+int sigismember(const sigset_t *set, int signum);
+信号屏蔽字
+int sigprocmask(int how, const sigset *set, sigset_t *oldset);
+how: sig_block sig_unblock sig_setmask
+
+改变了信号处理方式前,对之前的信号状态保存.之后恢复.
+
+sigprocmask(SIG_UNBLOCK, &set, &saveset);
+......
+sigprocmask(SIG_SETMASK, &saveset, NULL);
+
+当使用ctrl+c无法退出程序时,可以使用ctrl+\ 发出SIGQUIT信号试试看.
+p200 信号-sigsuspend
+会挂起程序,等待接收到指定信号才继续执行的原子操作.
+P201 sigaction
+int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
+struct sigaction {
+	void (*sa_handler)(int);
+	void (*sa_sigaction)(int , siginfo_t *, void *);
+	sigset_t sa_mask;
+	int sa_flags;
+	void (*sa_restorer)(void);
+}
+
+struct siginfo_t {
+	...
+	...
+	si_code
+	...
+}
+
+P203 信号-实时信号处理和信号总结
+
+P204 线程的概念和线程标识
+线程的概念
+一个正在运行的函数
+
+线程的创建
+#include <pthread.h>
+pthread_equal(pthread_t t1, pthread_t t2);
+pthread_self(void);
+pthread_create(pthread_t *thread,...);
+线程的终止
+pthread_exit()
+pthread_join(pthread_t thread, void **retval);
+线程的取消
+线程的收尸
+线程的栈清理
+
+线程同步
+线程属性
+线程同步的属性
+
+线程与信号的关系
+线程与fork
+
+爱有来生:
+知己错过那就放手 惜取眼前
+人生苦短 别悔恨太早 别懂得太晚
+今世何日止 来生何时来
+我怕你以走 又怕你未至
+于是一直站在原地 可我刚要走你就来了
+往事已做云烟 听风过 树影婆娑
+每一声都是我的叹息
+
+一句我养你道出的是,一个人在最无能为力的时候遇到了最想保护的人,是多么痛的领悟.
+你看我还有机会吗,我还有机会吗
+现实不是童话,无论是想保护一个人,还是保护一个梦想,除了努力,更需要勇气以及能力,才能在机会一闪而过时,狠狠抓住它.不给自己设限,不断打破自我,不断尝试.人生说短不短,说长不长,如果你还在迷茫,不要将自己蜷缩在黑暗里,不妨打开心去听听别人的故事.
+
+围巾

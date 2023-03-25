@@ -1,0 +1,325 @@
+#!/bin/bash
+
+yum install -y vim wget bind-utils bash-* net-tools iptables-services libaio-devel libaio fio lrzsz
+systemctl stop firewalld
+systemctl disable firewalld
+systemctl mask firewalld
+setenforce 0
+sed -i 's/enforcing/disabled/g' /etc/selinux/config
+
+# umount /home
+# sed -i "/home/d" /etc/fstab
+# lvremove /dev/centos/home -y
+# lvextend -l +100%free /dev/centos/root
+# xfs_growfs /dev/centos/root
+
+echo > /etc/sysconfig/iptables
+cat << EOF >> /etc/sysconfig/iptables
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -s 192.168.0.0/24 -j ACCEPT
+-A INPUT -s 8.210.206.77/32 -j ACCEPT
+-A INPUT -s 103.17.93.17/32 -p tcp -m state --state NEW -m tcp --dport 10050 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 33889 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+EOF
+systemctl restart iptables
+
+cat << EOF >> /etc/sysctl.conf
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_tw_recycle = 1
+net.core.rmem_max=16777216
+net.core.wmem_max=16777216
+net.ipv4.tcp_rmem=4096 87380 16777216
+net.ipv4.tcp_wmem=4096 65536 16777216
+net.ipv4.tcp_fin_timeout = 10
+net.ipv4.tcp_timestamps = 0
+net.ipv4.tcp_window_scaling = 0
+net.ipv4.tcp_sack = 0
+net.core.netdev_max_backlog = 30000
+net.ipv4.tcp_no_metrics_save=1
+net.ipv4.tcp_max_orphans = 262144
+net.ipv4.tcp_max_syn_backlog = 262144
+net.ipv4.tcp_synack_retries = 2
+net.ipv4.tcp_syn_retries = 2
+fs.inotify.max_user_instances=655350
+fs.inotify.max_user_watches=655350
+EOF
+sysctl -p
+
+cat << EOF >> /etc/security/limits.conf
+*               soft    nproc           2564000
+*               hard    nproc           2564000
+*               soft    nofile          2564000
+*               hard    nofile          2564000
+EOF
+
+# yum -y install https://mirrors.aliyun.com/zabbix/zabbix/5.0/rhel/7/x86_64/zabbix-agent-5.0.7-1.el7.x86_64.rpm
+# cat > /etc/zabbix/zabbix_agentd.conf  << EOF
+# PidFile=/var/run/zabbix/zabbix_agentd.pid
+# LogFile=/var/log/zabbix/zabbix_agentd.log
+# LogFileSize=0
+# Server=103.17.93.17
+# ServerActive=103.17.93.17
+# ListenPort=10050
+# Include=/etc/zabbix/zabbix_agentd.d/*.conf
+# EOF
+# systemctl enable zabbix-agent.service --now
+# systemctl restart zabbix-agent
+# 
+# fio -direct=1 -iodepth=128 -rw=randwrite -ioengine=libaio -bs=4k -size=1G -numjobs=1 -runtime=1000 -group_reporting -filename=iotest -name=Rand_Write_Testing
+
+
+yum install https://repo.percona.com/yum/percona-release-latest.noarch.rpm -y
+percona-release setup ps80
+yum install percona-server-server -y
+yum install jemalloc -y
+cat > /etc/sysconfig/mysql << EOF
+LD_PRELOAD=/usr/lib64/libjemalloc.so.1
+EOF
+systemctl enable mysqld
+cat > /etc/my.cnf << EOF
+[mysqld]
+#percona_mysql_variables
+binlog_space_limit = 5G
+max_slowlog_size = 256M
+max_slowlog_files = 4
+innodb_numa_interleave = ON
+kill_idle_transaction = 10
+
+mysqlx=OFF
+authentication_policy=mysql_native_password
+explicit_defaults_for_timestamp = 1
+max_prepared_stmt_count = 1048576
+sql_mode = STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
+activate_all_roles_on_login = ON
+
+# 网络和连接池
+bind_address = 0.0.0.0
+max_connections = 5120
+thread_handling = pool-of-threads          # one-thread-per-connection
+thread_pool_size = 32
+thread_pool_oversubscribe = 16
+thread_pool_max_threads = 5120
+skip_name_resolve = 1
+back_log = 1024
+max_connect_errors = 1000000
+max_allowed_packet = 32M
+interactive_timeout = 600
+wait_timeout = 600
+thread_stack = 512K
+
+# 打开文件限制和编码
+#character-set-server = utf8mb4          # MySQL8默认使用此编码
+open_files_limit = 256000                # 注意操作系统的设置和启动脚本的设置限制
+innodb_open_files = 65535
+table_open_cache = 1024
+table_definition_cache = 1024
+table_open_cache_instances = 64
+
+# 事务和锁
+external-locking = FALSE
+innodb_sync_spin_loops = 100
+innodb_spin_wait_delay = 30
+innodb_thread_concurrency = 0
+transaction_isolation = REPEATABLE-READ
+innodb_lock_wait_timeout = 10
+innodb_rollback_on_timeout = 1
+innodb_print_all_deadlocks = 1
+max_execution_time=10000
+
+# 缓存
+sort_buffer_size = 16M
+join_buffer_size = 16M
+thread_cache_size = 768
+#query_cache_size = 0
+#query_cache_type = 0
+tmp_table_size = 96M
+max_heap_table_size = 96M
+#innodb_additional_mem_pool_size = 16M
+innodb_buffer_pool_size = 16G
+innodb_buffer_pool_instances = 8
+innodb_buffer_pool_load_at_startup = 1
+innodb_buffer_pool_dump_at_shutdown = 1
+innodb_data_file_path = ibdata1:1G:autoextend
+innodb_log_buffer_size = 32M
+innodb_redo_log_capacity = 2G
+#innodb_log_file_size = 2G
+#innodb_log_files_in_group = 2
+innodb_max_undo_log_size = 4G
+innodb_file_per_table = 1
+innodb_online_alter_log_max_size = 4G
+
+# 日志部分
+log_timestamps = system
+min_examined_row_limit = 100
+log_slow_admin_statements = 1
+log_slow_replica_statements = 1
+#log-bin = /data/mysql/mybinlog  # MySQL8之后二进制默认开启，如需关闭使用disable_log_bin。
+binlog_cache_size = 16M
+max_binlog_cache_size = 64M
+max_binlog_size = 1G
+binlog_row_image = minimal
+binlog_rows_query_log_events = 1
+binlog_expire_logs_seconds=259200  #3*24*3600
+#expire_logs_days = 7
+
+# 慢查日志
+slow_query_log = 1
+slow_query_log_file = /var/lib/mysql/slow.log
+log-error = /var/lib/mysql/mysqld.log
+long_query_time = 0.1
+#log_queries_not_using_indexes =1
+#log_throttle_queries_not_using_indexes = 60
+
+# 预读
+innodb_read_ahead_threshold = 56
+innodb_random_read_ahead = OFF
+
+# 落盘
+sync_binlog = 64
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_log_at_timeout = 6
+innodb_io_capacity = 4000
+innodb_io_capacity_max = 8000
+innodb_flush_neighbors = 0
+innodb_max_dirty_pages_pct = 25
+innodb_max_dirty_pages_pct_lwm = 10
+innodb_flush_method = O_DIRECT
+innodb_lru_scan_depth = 4000
+innodb_checksum_algorithm = crc32
+innodb_page_cleaners = 4
+
+# 双写
+innodb_doublewrite = OFF
+
+# 并发读写和日志清理
+innodb_write_io_threads = 8
+innodb_read_io_threads = 8
+innodb_purge_threads = 4
+innodb_parallel_read_threads = 8
+
+# 复制
+server-id = 3306
+replica_parallel_type = LOGICAL_CLOCK
+replica_parallel_workers = 8
+replica_preserve_commit_order = ON
+binlog_transaction_dependency_tracking = WRITESET
+replica_checkpoint_period = 2
+replication_optimize_for_static_plugin_config = ON
+replication_sender_observe_commit_only = ON
+
+#binlog_group_commit_sync_delay = 500
+#binlog_group_commit_sync_no_delay_count = 10
+#master_info_repository = TABLE
+#relay_log_info_repository = TABLE
+
+# GTID
+gtid_mode = on
+enforce_gtid_consistency = 1
+binlog_format = row
+relay_log_recovery = 1
+relay-log-purge = 1
+replica_skip_errors = all
+#log_replica_updates
+EOF
+
+percona-release enable psmdb-44 release
+yum install percona-server-mongodb -y
+systemctl enable mongod
+cat > /etc/mongod.conf << EOF
+# mongod.conf, Percona Server for MongoDB
+# for documentation of all options, see:
+#   http://docs.mongodb.org/manual/reference/configuration-options/
+
+# Where and how to store data.
+storage:
+  oplogMinRetentionHours: 10
+  dbPath: /var/lib/mongo
+  journal:
+    enabled: true
+#  engine: mmapv1
+  engine: wiredTiger
+#  engine: inMemory
+
+# Storage engine various options
+#  More info for mmapv1: https://docs.mongodb.com/v4.0/reference/configuration-options/#storage-mmapv1-options
+#  mmapv1:
+#    preallocDataFiles: true
+#    nsSize: 16
+#    quota:
+#      enforced: false
+#      maxFilesPerDB: 8
+#    smallFiles: false
+
+#  More info for wiredTiger: https://docs.mongodb.com/v4.0/reference/configuration-options/#storage-wiredtiger-options
+  wiredTiger:
+    engineConfig:
+      cacheSizeGB: 32
+      checkpointSizeMB: 256
+#      statisticsLogDelaySecs: 0
+#      journalCompressor: snappy
+#      directoryForIndexes: false
+#    collectionConfig:
+#      blockCompressor: snappy
+#    indexConfig:
+#      prefixCompression: true
+
+#  More info for inMemory: https://www.percona.com/doc/percona-server-for-mongodb/4.0/inmemory.html#configuring-percona-memory-engine
+#  inMemory:
+#    engineConfig:
+#      inMemorySizeGB: 1
+#      statisticsLogDelaySecs: 0
+
+# Two options below can be used for wiredTiger and inMemory storage engines
+setParameter:
+    wiredTigerConcurrentReadTransactions: 256
+    wiredTigerConcurrentWriteTransactions: 256
+    maxLogSizeKB: 20
+    syncdelay: 30
+
+# where to write logging data.
+systemLog:
+  destination: file
+  logAppend: true
+  logRotate: reopen
+  path: /var/lib/mongo/mongodb.log
+
+processManagement:
+  fork: true
+  pidFilePath: /var/run/mongod.pid
+
+# network interfaces
+net:
+  port: 27017
+  bindIp: 0.0.0.0
+
+security:
+  authorization: disabled
+#  keyFile: /var/lib/mongo/file.key
+
+#operationProfiling:
+
+replication:
+  replSetName: "mongorepl"
+
+#sharding:
+
+## Enterprise-Only Options:
+
+#auditLog:
+
+#snmp:
+#operationProfiling:
+#   slowOpThresholdMs: 200
+#   mode: slowOp
+#   rateLimit: 100
+EOF

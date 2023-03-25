@@ -1,0 +1,16 @@
+How to easily install WordPress on FreeBSD12.2
+https://github.com/yaroslav-gwit/freebsd-wordpress-autoinstaller
+
+pkg update -f && pkg install -y bash curl && chsh -s bash root
+
+M0N0WALL:
+OPNSense Firewall Rules Explained
+https://www.youtube.com/watch?v=kYFNa_zpeII
+pfsense VS opnsense
+
+
+
+FreeBSD's Bhyve Overview:
+https://www.youtube.com/watch?v=uV61mVYsFM8
+
+neofetch

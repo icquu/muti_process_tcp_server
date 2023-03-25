@@ -1,0 +1,115 @@
+﻿rsync远程同步 重点！重点！！重点！！！
+
+例子
+• rsync -av /etc/passwd /tmp/1.txt
+• rsync -av /tmp/1.txt 192.168.188.128:/tmp/2.txt
+
+rsync格式
+• rsync [OPTION] … SRC DEST
+• rsync [OPTION] … SRC [user@]host:DEST
+• rsync [OPTION] … [user@]host:SRC DEST
+• rsync [OPTION] … SRC [user@]host::DEST
+• rsync [OPTION] … [user@]host::SRC DEST
+rsync常用选项
+
+• -a 包含-rtplgoD • -r 同步目录时要加上，类似cp时的-r选项 • -v 同步时显示一些信息，让我们知道同步的过程 • -l 保留软连接 • -L 加上该选项后，同步软链接时会把源文件给同步 • -p 保持文件的权限属性 • -o 保持文件的属主 • -g 保持文件的属组 • -D 保持设备文件信息 • -t 保持文件的时间属性 • --delete 删除DEST中SRC没有的文件 • --exclude 过滤指定文件，如--exclude “logs”会把文件名包含logs的文件或者目录过滤掉，不同步 • -P 显示同步过程，比如速率，比-v更加详细 • -u 加上该选项后，如果DEST中的文件比SRC新，则不同步 • -z 传输时压缩 • -e 指定端口
+
+rsync通过ssh方式同步
+
+
+• rsync -av test1/ 192.168.133.132:/tmp/test2/
+• rsync -av 192.168.133.132:/tmp/test2/ /root/test1
+
+如果对方机器sshd端口不是22呢，所以我们就要指定对方机器的shhd端口了
+• rsync -av -e "ssh -p 1122" test1/ 192.168.133.132:/tmp/test2/
+
+
+rsync 通过服务的方式同步
+
+• 要编辑配置文件/etc/rsyncd.conf • 启动服务rsync --daemon • 格式：rsync -av test1/ 192.168.133.130::module/dir/ 如果要用服务的方式同步，需要先启动rsync服务，然后编辑配置文件 vim /etc/rsyncd.conf 这里有个rsyncd.conf 样例:我们直接负责进去，修改一下配置
+
+port=873
+log file=/var/log/rsync.log
+pid file=/var/run/rsyncd.pid
+address=192.168.133.130   
+[test]       \\指定模块名，里面内容自定义
+path=/tmp/rsync  
+use chroot=true 
+max connections=4
+read only=no
+list=true
+uid=root
+gid=root
+auth users=test
+secrets file=/etc/rsyncd.passwd
+hosts allow=192.168.133.132 1.1.1.1 2.2.2.2  192.168.133.0/24
+
+从客户端同步数据到服务端
+[root@linux-129 ~]# rsync -av /tmp/1.txt 192.168.88.129::test/test.txt
+
+
+从服务端将数据同步回来
+[root@linux-129 ~]# rsync -avP  192.168.88.128::test/test.txt  /tmp/test.txt
+receiving incremental file list
+test.txt
+        1372 100%    1.31MB/s    0:00:00 (xfer#1, to-check=0/1)
+
+sent 45 bytes  received 1475 bytes  3040.00 bytes/sec
+total size is 1372  speedup is 0.90
+
+如果服务端rsync的端口是8730，客户端是没有开放这个端口，所以我们要指定端口 --port
+
+[root@linux-129 ~]# rsync -avP --port 8730 192.168.88.128::test/test.txt  /tmp/test.txt
+receiving incremental file list
+
+sent 26 bytes  received 60 bytes  172.00 bytes/sec
+total size is 1372  speedup is 15.95
+
+
+rsyncd.conf配置文件详解
+
+• port：指定在哪个端口启动rsyncd服务，默认是873端口。
+• log file：指定日志文件。
+• pid file：指定pid文件，这个文件的作用涉及服务的启动、停止等进程管理操作。
+• address：指定启动rsyncd服务的IP。假如你的机器有多个IP，就可以指定由其中一个启动rsyncd服务，如果不指定该参数，默认是在全部IP上启动。
+• []：指定模块名，里面内容自定义。
+• path：指定同步数据存放的路径。
+• use chroot true|false：表示在传输文件前首先chroot到path参数所指定的目录下。这样做的原因是实现额外的安全防护，但缺点是需要以roots权限，并且不能备份指向外部的符号连接所指向的目录文件。比如你要同步的文件里面有软连接，软连接的源地址在其他目录下，如果use chroot的值是true，那么你在同步的时候加上-L 想要将软连接的源文件同步过去的时候，它是会报错的同步失败，不加-L，它能同步成功，只是同步过的软链接是失效的。默认情况下chroot值为true，如果你的数据当中有软连接文件，阿铭建议你设置成false。 • max connections：指定最大的连接数，默认是0，即没有限制。如果有很多客户端都在重服务器上同步数据，给服务器带来压力，我们就可以设置这个最大连接数。
+• read only ture|false：read只读，如果为true，则不能上传到该模块指定的路径下。
+• list：表示当用户查询该服务器上的可用模块时，该模块是否被列出，设定为true则列出，false则隐藏。这里可用模块就是我们定义的[test]；我们在：：后面不加内容，它就会列出模块来，别人就知道这个模块，他会上传一些木马窃取信息，所以为了安全，设置成false
+
+• uid/gid：指定传输文件时以哪个用户/组的身份传输。
+• auth users：指定传输时要使用的用户名。
+• secrets file：指定密码文件，该参数连同上面的参数如果不指定，则不使用密码验证。注意该密码文件的权限一定要是600。格式：用户名:密码
+• hosts allow：表示被允许连接该模块的主机，可以是IP或者网段，如果是多个，中间用空格隔开。192.168.133.132 1.1.1.1 2.2.2.2 192.168.133.0/24
+
+• 当设置了auth users和secrets file后，我们需要在服务端的/etc/rsyncd.passwd 文件写入用户名和密码格式(test:123123)客户端连服务端也需要用用户名密码了，
+
+[root@linux-128 ~]# vim /etc/rsyncd.passwd
+[root@linux-128 ~]# chmod 600 !$        \\设置权限，一定要设置权限
+chmod 600 /etc/rsyncd.passwd
+
+[root@linux-129 ~]# rsync -avP --port 8730 test@192.168.88.128::test/test.txt  /tmp/test.txt
+Password:
+receiving incremental file list
+
+sent 54 bytes  received 101 bytes  34.44 bytes/sec
+total size is 1372  speedup is 8.85
+
+若不想在命令行中带上密码，可以在客户端上创建一个一个密码文件/etc/pass，这个密码文件格式和服务端设置的密码文件格式不一样，它只需要写入和服务端密码一样就行(123123)。
+
+[root@linux-129 ~]# vim /tmp/pass
+[root@linux-129 ~]# chmod 600 !$     \\设置权限，一定要设置权限
+chmod 600 /tmp/pass
+[root@linux-129 ~]# rsync -avP --port 8730 --password-file=/tmp/pass test@192.168.88.128::test/test.txt  /tmp/test.txt
+receiving incremental file list
+
+sent 54 bytes  received 101 bytes  310.00 bytes/sec
+total size is 1372  speedup is 8.85
+
+• rsync -avL test@192.168.133.130::test/test1/ /tmp/test8/ --password-file=/etc/pass
+• 其中/etc/pass内容就是一个密码，权限要改为600
+
+总结：rsync远程同步分为通过ssh同步，和服务的方式同步
+ssh方式同步：一个冒号
+服务方式同步：： 2个冒号

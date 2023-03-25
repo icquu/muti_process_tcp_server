@@ -1,0 +1,24 @@
+关注MySQL版本升级带来的新变化:
+8.0.27
+线程在系统中可看到线程名称.
+8.0.28
+CPU_TIME字段记录查询所用的CPU时间.
+性能模式说明
+现在可以使用新的语句度量 ，CPU_TIME使您能够测量查询所用的 CPU 时间。
+
+为了支持这一点，进行了以下更改：
+
+计时器THREAD_CPU已添加到 Performance Schema PERFORMANCE_TIMERS表中。
+
+消费者events_statements_cpu已添加到性能模式 setup_consumers表中。
+
+events_statements_cpu默认情况下禁用。
+
+一个 Performance Schema 命令选项， performance-schema-consumer-events-statements-cpu 用于启用或禁用使用者， events_statements_cpu.
+
+有关详细信息，请参阅性能模式命令选项。
+https://dev.mysql.com/doc/refman/8.0/en/performance-schema-options.html
+
+8.0.29
+在 MySQL 8.0.29 之前，即时添加的列只能添加为表的最后一列。从 MySQL 8.0.29 开始，可以将即时添加的列添加到表中的任何位置
+

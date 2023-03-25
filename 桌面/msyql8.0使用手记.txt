@@ -1,0 +1,201 @@
+ create user 'root'@'%' identified with mysql_native_password by 'Woshisui0!@#';
+ grant all privileges on *.* to 'root'@'%' with grant option;
+
+ mysql8.0
+ 新特性：
+ 倒序索引
+ 禁用索引
+ 函数索引
+# 创建不可见索引
+create table t2(c1 int,c2 int,index idx_c1_c2(c1,c2 desc) invisible );
+# 索引可见
+alter table t2 alter index idx_c1_c2 visible;
+# 索引不可见
+alter table t2 alter index idx_c1_c2 invisible;
+ 默认使用innodb引擎
+ 默认使用utf8mb4字符集
+ 默认使用sha256_password加密用户密钥
+ 使用传统方式必须显示指定为mysql_native_password加密用户密钥
+ 可以使用角色管理用户权限，也可以使用传统方式管理用户权限
+ 修复自增字段设置自增值重启实例后丢失的bug
+ 可持久化临时设置的系统参数，无需修改已有的配置文件
+ PERSIST
+ 例如执行：
+ set PERSIST expire_logs_days=10 ;
+ RESET PERSIST [[IF EXISTS] system_var_name]
+ RESET PERSIST;
+ RESET PERSIST system_var_name;
+ RESET PERSIST IF EXISTS system_var_name;
+ 系统会在数据目录下生成一个包含json格式的 mysqld-auto.cnf 的文件，格式化后如下所示，当 my.cnf 和 mysqld-auto.cnf 同时存在时，后者具有更高优先级。
+
+ cte通用表表达式,可以实现递归调用:
+--------------------------------------------------
+ with_clause:
+    WITH [RECURSIVE]
+        cte_name [(col_name [, col_name] ...)] AS (subquery)
+        [, cte_name [(col_name [, col_name] ...)] AS (subquery)] ...
+--------------------------------------------------
+ WITH
+  cte1 AS (SELECT a, b FROM table1),
+  cte2 AS (SELECT c, d FROM table2)
+SELECT b, d FROM cte1 JOIN cte2
+WHERE cte1.a = cte2.c;
+
+ WITH RECURSIVE CTE1(ID) AS (
+	SELECT 1 
+	UNION ALL
+	SELECT ID+1 FROM CTE1 WHERE ID < 10
+) SELECT * FROM CTE1;
+ 相关参数: cte_max_recursion_depth 递归调用的深度
+ 		   max_execution_time 最大执行时间，限制sql语句的执行时间。
+
+ 窗口函数：
+ sum(column) OVER (partition by column) as column_name
+ SUM(total_win) over (PARTITION BY platform ORDER BY total_win ROWS UNBOUNDED PRECEDING)
+ RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+ RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+ ORDER BY X ASC RANGE BETWEEN 10 FOLLOWING AND 15 FOLLOWING
+ ORDER BY X ASC RANGE BETWEEN 10 FOLLOWING AND UNBOUNDED FOLLOWING
+ ORDER BY X DESC RANGE BETWEEN 10 FOLLOWING AND UNBOUNDED FOLLOWING
+-----------------------
+ SELECT
+  val,
+  ROW_NUMBER() OVER (ORDER BY val) AS 'row_number',
+  RANK()       OVER (ORDER BY val) AS 'rank',
+  DENSE_RANK() OVER (ORDER BY val) AS 'dense_rank'
+FROM numbers;
+可以改写为：
+SELECT
+  val,
+  ROW_NUMBER() OVER w AS 'row_number',
+  RANK()       OVER w AS 'rank',
+  DENSE_RANK() OVER w AS 'dense_rank'
+FROM numbers
+WINDOW w AS (ORDER BY val);
+-----------------------
+ SELECT
+ time, subject, val,
+ SUM(val) OVER (PARTITION BY subject ORDER BY time ROWS UNBOUNDED PRECEDING)
+   AS running_total,
+ AVG(val) OVER (PARTITION BY subject ORDER BY time ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING)
+   AS running_average
+FROM observations;
+-----------------------
+窗口边界定义：
+frame_extent:
+    {frame_start | frame_between}
+
+frame_between:
+    BETWEEN frame_start AND frame_end
+
+frame_start, frame_end: {
+    CURRENT ROW
+  | UNBOUNDED PRECEDING
+  | UNBOUNDED FOLLOWING
+  | expr PRECEDING
+  | expr FOLLOWING
+}
+Examples of valid expr PRECEDING and expr FOLLOWING indicators: 
+10 PRECEDING
+INTERVAL 5 DAY PRECEDING
+5 FOLLOWING
+INTERVAL '2:30' MINUTE_SECOND FOLLOWING
+-----------------------
+专用窗口函数：
+ ROW_NUMBER()/RANK()/DENSE_RANK()/PERCENT_RANK() 排序函数
+ FIRST_VALUE()/LAST_VALUE()/LEAD()/LAG() 最大，最小，前第n个，后第n个
+ CUME_DIST()/NTH_VALUE()/NTILE() 出现多少种，出现多少次，占比
+
+ SELECT val, row_number() over (order by val) as row_number from numbers;
+ SELECT val, first_value(val) over (order by val) as 'first', lead(val, 1) over (order by val) as 'lead' from numbers;
+ SELECT val, ntile(4) over (order by val) as 'ntile4' from numbers;
+
+ ibd2sdi工具可以将8.0的数据文件转换为JSON格式的数据文件。
+
+ DDL原子化
+ InnoDB表的DDL支持事务完整性，要么成功要么回滚，将DDL操作回滚日志写入到data dictionary 数据字典表 mysql.innodb_ddl_log 中用于回滚操作，该表是隐藏的表，通过show tables无法看到。通过设置参数，可将ddl操作日志打印输出到mysql错误日志中。
+ mysql> set global log_error_verbosity=3;
+ mysql> set global innodb_print_ddl_logs=1;
+
+ 部分快速DDL
+
+ group by 不再隐式排序
+ mysql 8.0 对于group by 字段不再隐式排序，如需要排序，必须显式加上order by 子句。
+
+ JSON特性增强:
+-----------------------
+ 8.0的新写法：
+ with doc(data) as (select json_object('id':3,'name':'kali'))
+ select data->>'$.name' from doc;
+ 等价于
+ with doc(data) as (select json_object('id':3,'name':'kali'))
+ select jsonunquote(data->'$.name') from doc;
+ 等价于
+ with doc(data) as (select json_object('id':3,'name':'kali'))
+ select json_unquote(json_extract(data, '$.name')) from doc;
+-----------------------
+ select json_extract('["a","b","c","d","e"]', '$[1]');
+ select json_extract('["a","b","c","d","e"]', '$[1 to 3]');
+ select json_extract('["a","b","c","d","e"]', '$[last-2 to last]');
+
+ json_arrayagg()
+ 数组聚合
+ select o_id, json_arrayagg(attribute) from t group by o_id;
+ 聚合成json数组
+ json_objectagg()
+ json聚合
+ select o_id, json_objectagg(attribute, value) from t group by o_id;
+ 结果是json格式的列 
+
+ json_pretty();
+ json_storage_size();
+ json_stroage_free(); 
+
+ json_merge_patch();
+ select json_merge_patch('{"a":1,"b":2}','{"a":3,"c":4}');
+ json_merge_perserv();
+ select json_merge_perserv('{"a":1,"b":2}','{"a":3,"c":4}');
+
+ 将json转换为表:
+ json_table([json_object],$[*],columns());
+
+ MySQL 8 大幅改进了对 JSON 的支持，添加了基于路径查询参数从 JSON 字段中抽取数据的 JSON_EXTRACT() 函数，以及用于将数据分别组合到 JSON 数组和对象中的 JSON_ARRAYAGG() 和 JSON_OBJECTAGG() 聚合函数。在主从复制中，新增参数 binlog_row_value_options，控制JSON数据的传输方式，允许对于Json类型部分修改，在binlog中只记录修改的部分，减少json大数据在只有少量修改的情况下，对资源的占用。
+
+ redo & undo 日志加密
+
+增加以下两个参数，用于控制redo、undo日志的加密。
+innodb_undo_log_encrypt
+innodb_undo_log_encrypt
+
+innodb select for update跳过锁等待
+select ... for update，select ... for share(8.0新增语法) 添加 NOWAIT、SKIP LOCKED语法，跳过锁等待，或者跳过锁定。
+在5.7及之前的版本，select...for update，如果获取不到锁，会一直等待，直到innodb_lock_wait_timeout超时。
+在8.0版本，通过添加nowait，skip locked语法，能够立即返回。如果查询的行已经加锁，那么nowait会立即报错返回，而skip locked也会立即返回，只是返回的结果中不包含被锁定的行。
+
+增加SET_VAR语法
+在sql语法中增加SET_VAR语法，动态调整部分参数，有利于提升语句性能。
+
+select /*+ SET_VAR(sort_buffer_size = 16M) */ id  from test order id ;
+insert  /*+ SET_VAR(foreign_key_checks=OFF) */ into test(name) values(1);
+
+新增innodb_dedicated_server参数
+能够让InnoDB根据服务器上检测到的内存大小自动配置 innodb_buffer_pool_size， innodb_log_file_size， innodb_flush_method三个参数。
+
+ 
+ 复制优化
+ 并发锁优化
+
+------------------------------------------------------------
+
+CREATE USER 'jeffrey'@'localhost'
+IDENTIFIED WITH sha256_password BY 'new_password'
+PASSWORD EXPIRE INTERVAL 180 DAY;
+
+CREATE USER
+  'jeffrey'@'localhost' IDENTIFIED WITH mysql_native_password
+                                   BY 'new_password1',
+  'jeanne'@'localhost' IDENTIFIED WITH sha256_password
+                                  BY 'new_password2'
+  REQUIRE X509 WITH MAX_QUERIES_PER_HOUR 60
+  PASSWORD HISTORY 5
+  ACCOUNT LOCK;

@@ -1,0 +1,57 @@
+GreatSQL安装
+创建用户
+set sql_log_bin=0;
+create user repl identified with mysql_native_password by '123';
+grant backup_admin, replication slave on *.* to repl;
+设置复制通道：
+change master to master_user='repl', master_password='123' for channel 'group_replication_recovery';
+设置引导节点，启动主节点：
+set global group_replication_bootstrap_group = ON;
+start group_replication;
+启动完毕后，关闭引导设置：
+set global group_replication_bootstrap_group = OFF;
+确认状态：
+select * from performance_schema.replication_group_members;
+其他节点：
+start group_replication;
+查看组复制事务状态：
+select member_id as id, count_transactions_in_queue as trx_queue, count_transactions_remote_in_applier_queue as app_queue, count_transactions_checked as chkd, count_transactions_remote_applied as apped, count_transactions_local_proposed as proposed form performance_schema.replication_group_member_stats;
+切换主节点：
+mysql> select group_replication_set_as_primary('<member_id>');
+查询节点id：
+mysql> select * from performance_schma.replication_group_members;
+
+使用MySQL_shell安装GreatSQL MGR
+
+
+
+journalctl
+
+
+GreatSQL MGR优化
+集群中个别节点存在性能瓶颈
+
+不恰当的流控阈值，导致性能受限
+
+官方版本流控算法缺陷，导致性能抖动大
+
+大事务造成延迟，甚至节点退出
+调整选项max_binlog_cache_size, group_replication_transaction_size_limit, net_buffer_length, max_allowed_packet.
+杜绝大事务，做好监控，及时告警。
+活跃时间最长的事务：
+select * from I_S.innodb_trx order by trx_started ASC limit 1;
+等待时间最长的事务：
+select * from sys.innodb_lock_waits order by wait_age_secs desc limit 1;
+需要关注的大事务：
+select * from I_S.innodb_trx where trx_lock_structs >=5 OR trx_rows_locked >=100 OR trx_rows_modified >= 100 OR time_to_sec(timediff(now(),trx_strated)) > 10;
+
+网络成为瓶颈，导致消息延迟大
+网络优化
+网络质量
+传输压缩
+
+其他Mysql常见性能瓶颈导致
+最大性能模式
+numa
+xfs
+deadline/noop

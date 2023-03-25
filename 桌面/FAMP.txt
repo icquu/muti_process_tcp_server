@@ -1,0 +1,56 @@
+Famp:
+
+apache:
+pkg install apache24
+sysrc apache24_enable="yes"
+service apache24 start
+
+php:
+pkg search -o php
+pkg search php5 | less
+pkg search php7
+pkg search php71
+pkg install php71 mod_php71 php71-mbstring php71-mcrypt php71-zlib php71-curl php71-gd php71-json 
+
+配置apache:
+nano /usr/local/etc/apache24/Includes/php.conf
+
+Add the following lines to php.conf file.
+
+<IfModule dir_module>
+    DirectoryIndex index.php index.html
+    <FilesMatch "\.php$">
+        SetHandler application/x-httpd-php
+    </FilesMatch>
+    <FilesMatch "\.phps$">
+        SetHandler application/x-httpd-php-source
+    </FilesMatch>
+</IfModule>
+
+测试:
+echo '<?php phpinfo();  ?>' | tee -a /usr/local/www/apache24/data/info.php
+
+service apache24 restart
+
+http://IP-or-FQDN/info.php 
+
+优化php配置:
+# cp /usr/local/etc/php.ini-production /usr/local/etc/php.ini-production.bakup
+# ln -s /usr/local/etc/php.ini-production /usr/local/etc/php.ini
+
+database安装:
+pkg install mariadb102-server mariadb102-client php71-mysqli
+
+sysrc mysql_enable="yes" 
+service mysql-server start
+
+lsof -i4 | grep mysql
+netstat -an | grep 3306
+sockstat -4 | grep 3306
+
+-----------------
+sysrc mysql_args="--bind-address=127.0.0.1"
+
+service mysql-server restart
+or
+/usr/local/etc/rc.d/mysql-server restart

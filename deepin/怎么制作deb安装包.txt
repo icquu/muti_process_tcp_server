@@ -1,0 +1,49 @@
+急问，怎么制作deb安装包？
+用dpkg -b命令打包就可以了
+追问
+有没有具体例子？
+追答
+　　比如你要打包你当前debian系统的/usr/src/soft目录，然后在另一个debian系统上安装
+
+　　改包时这些文件也释放到/usr/src/soft目录下：
+
+　　在随便一个目录，比如是root下创建一个工作目录，比如是work
+　　#cd /root
+
+　　#mkdir work
+
+　　#cd work
+
+　　因为安装包的时候默认是将文件释放到根目录下，所以我们设定好它的路径：
+　　#mkdir -p usr/src
+
+　　#cp -a /usr/src/soft usr/src
+
+　　#mkdir DEBIAN
+
+　　用如下的方法在DEBIAN目录下创建一个control文件，并用加入内容：
+　　#cat >DEBIAN/control<EOF
+
+　　Package: soft
+
+　　Version: 1.0.1
+
+　　Section: utils
+
+　　Priority: optional
+
+　　Architecture: i386
+
+　　Depends:
+
+　　Installed-Size: 512
+
+　　Maintainer: sunwill_chen@hotmail.com
+
+　　Description: soft package
+
+　　EOF
+
+　　#dpkg -b . /root/soft_1.0.1_i386.deb
+
+　　这样便已经在/root目录下生成一个soft_1.0.1_i386.deb的包了。

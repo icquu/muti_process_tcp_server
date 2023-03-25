@@ -1,0 +1,8 @@
+数据分析和工具：
+clickhouse
+Elasticsearch ELK
+Hbase
+图形化展示工具
+grafana
+
+Python几乎可以做所有的业务型工作，因为它有丰富的三方库，没有更好的方案就用它。

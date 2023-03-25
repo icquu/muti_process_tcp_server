@@ -1,0 +1,33 @@
+不超过1000的并发连接，不管使用多进程还是多线程都可以满足要求：
+
+多进程网络通讯服务器程序的关键技术：
+利用signal机制捕捉SIGCHLD信号来回收子进程
+主进程关闭cfd，子进程关闭lfd
+-----------------------------
+多线程网络通讯服务器程序
+设置线程分离，传递cfd和cfd的sockaddr_in到线程
+
+-----------------------------
+目前标准化的网络服务器程序开发都会使用epoll：
+资源开销更小的方式多路IO转接：select（1024） poll（3000） epoll（10000）
+setsockopt()
+getsockopt()
+manpage 知名出版书籍 开源中国 代码实例验证
+APUE UNIX网络编程
+端口复用的代码设置：
+int opt=1;
+setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,&opt,sizeof(opt));
+
+select:
+加入集合，监听集合
+void FD_ZERO(fd_set *set);
+void FD_CLR(int fd, fd_set *set);
+int FD_ISSET(int fd, fd_set *set);
+void FD_SET(int fd, fd_set *set);
+
+select(max_fd+1, fd_set *readfd,fd_set *writefd,fd_set *,timeout);
+
+for()
+FD_ISSET(fd, &readfds);
+
+select函数有比较大的缺点，并不好用。

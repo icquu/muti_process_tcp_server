@@ -1,0 +1,20 @@
+绘制电路图软件:
+KTechLab
+
+3D设计
+blender
+
+图像设计
+gimp
+
+多音轨编辑:
+multimedia:ardour
+lnms
+
+obs studio
+
+电路板设计:
+KiCard
+
+呼吸: 吸7 呼14 屏28
+冥想

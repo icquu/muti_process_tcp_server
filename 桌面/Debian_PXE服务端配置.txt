@@ -1,0 +1,74 @@
+Debian设置PXE服务器的主要服务是:
+systemctl stop isc-dhcp-server.service
+systemctl stop tftpd-hpa.service
+参考Debian的官方文档设置配置文件，引导文件和预置文件。
+
+https://www.debian.org/releases/stable/amd64/ch04s05.zh-cn.html#dhcpd
+在 DHCP 配置中打开 PXE 引导功能
+这里是另外一个采用 TFTP 的 Pre-boot Execution Environment (PXE) 方法的 dhcp.conf 配置例子。
+
+option domain-name "example.com";
+
+default-lease-time 600;
+max-lease-time 7200;
+
+allow booting;
+allow bootp;
+
+# The next paragraph needs to be modified to fit your case
+subnet 192.168.1.0 netmask 255.255.255.0 {
+  range 192.168.1.200 192.168.1.253;
+  option broadcast-address 192.168.1.255;
+# the gateway address which can be different
+# (access to the internet for instance)
+  option routers 192.168.1.1;
+# indicate the dns you want to use
+  option domain-name-servers 192.168.1.3;
+}
+
+group {
+  next-server 192.168.1.3;
+  host tftpclient {
+# tftp client hardware address
+  hardware ethernet  00:10:DC:27:6C:15;
+  filename "pxelinux.0";
+ }
+}
+注意对于 PXE 引导来说，客户端文件名 pxelinux.0 是一个 boot loader，而非一个内核映象(参见下面的 第 4.5.4 节 “将 TFTP 映像放到适当的位置”)。
+
+如果机器使用 UEFI 来引导，那么必须指定适于 UEFI 机器的引导程序，例如
+
+group {
+  next-server 192.168.1.3;
+  host tftpclient {
+# tftp client hardware address
+  hardware ethernet  00:10:DC:27:6C:15;
+  filename "debian-installer/amd64/bootnetx64.efi";
+ }
+}
+
+开启 TFTP 服务器
+要准备好 TFTP 服务器，您首先需要确定 tftpd 已经启动。
+
+对于 tftpd-hpa 有两种方式可以启动服务。它可以通过系统的 inetd 守护程序启动，或者设置为独立的守护程序。这可以在安装软件包的时候选择，也可以用重新配置软件包方式修改。
+
+注意
+因为历史原因，TFTP 服务器使用 /tftpboot 作为映像文件目录。然而，Debian GNU/Linux 软件包遵守 Filesystem Hierarchy Standard 使用其他的目录。例如，tftpd-hpa 默认使用 /srv/tftp。您或许要适当地调整一下配置文件示例。
+
+Debian 中所有 in.tftpd 参数默认都会将 TFTP 请求记录到系统日志中。有些还支持 -v 选项增加详细程度。万一遇到引导问题，推荐先检查这些日志信息，这对于分析错误是一个好的起始点。
+
+4.5.4. 将 TFTP 映像放到适当的位置
+接下来，将 第 4.2.1 节 “在哪里能找到安装文件” 中找到的 TFTP 启动映像放置到 tftpd 引导映像目录中。您可能需要将该文件链接到 tftpd 所使用的引导特定客户端的文件名。不幸的是，这个文件名完全决定于 TFTP 客户程序，而且没有一个强制的标准。
+
+对于用 PXE 引导来说，您所需的只是建立 netboot/netboot.tar.gz 压缩包。只须将此包解压到 tftpd 引导映像目录下。并确保您的 DHCP 服务器的配置将会把 pxelinux.0 作为启动所需的文件名传递给 tftpd。对于 UEFI 机器，需要传递适当的 EFI 引导映像名称（如 /debian-installer/amd64/bootnetx64.efi）。
+
+https://www.debian.org/releases/stable/amd64/apbs02.zh-cn.html#preseed-dhcp
+使用 DHCP 服务器指定预置文件
+还可以使用 DHCP 来指定从网络下载的预置文件。DHCP 允许指定文件名。通常是用于 netboot 的文件，但如果是一个 URL，那么支持网络预置的安装介质就会从该 URL 下载，并用作预置文件。这里有一个在 dhcpd.conf 中使用的例子，它用于 ISC DHCP 服务器第 3 版(Debian 里面是 isc-dhcp-server 软件包)。
+
+if substring (option vendor-class-identifier, 0, 3) = "d-i" {
+    filename "http://host/preseed.cfg";
+}
+
+有一个预置文件的例子放在 https://www.debian.org/releases/bullseye/example-preseed.txt，您可以拿它作为自己预置文件的基础。此文件基于本附录所列的配置文件片段。
+

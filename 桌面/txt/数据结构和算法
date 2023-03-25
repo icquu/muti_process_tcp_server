@@ -1,0 +1,39 @@
+程序的精髓：数据结构和算法
+数据库是数据结构和算法的大集成，数据库就是使用数据结构和算法包装成的产品，使得开发程序时可以把主要精力放在业务逻辑上，而不需要太关心底层数据的组织，使用和存储。
+字节大佬耗时120天透彻讲解【数据结构与算法】整整110集
+https://www.bilibili.com/video/BV1ci4y1d7ku?p=1
+最新 C/C++全栈高级开发 就业班完结
+https://www.bilibili.com/video/BV11K4y1s7yp?p=317&spm_id_from=pageDriver
+斐波那契数列的特点：
+0 1 1 2 3 5 8 13
+求第n个数的值？
+算法一：递归实现
+
+long fun1(long n){
+	if (n<=1) return n;
+	return fun1(n-1)+fun1(n-2);
+}
+
+算法二：循环实现
+long a=0,b=1;
+long c=a+b;
+long n=1000;
+for (int i = 0; i < n; ++i)
+{
+	if (i==0)
+	{
+		c=0;
+	}else if (i==1)
+	{
+		c=1;
+	}else if (i==2)
+	{
+		c=a+b;
+		a=b;
+		b=c;
+	}else{
+		c=c+b;
+		a=b;
+		b=c;
+	}
+}

@@ -1,0 +1,172 @@
+FreeBSD_kqueue模型:
+kqueue()
+kevent()
+
+struct kevent{
+	uintptr_t ident;
+	short filter;
+	u_short flags;
+	u_int fflags;
+	intptr_t data;
+	void *udata;
+};
+
+与socket读写相关的filter:
+EVFILT_READ:TCP 监听 socket，如果在完成的连接队列 ( 已收三次握手最后一个 ACK) 中有数据，此事件将被通知。收到该通知的应用一般调用 accept()，且可通过 data 获得完成队列的节点个数。 流或数据报 socket，当协议栈的 socket 层接收缓冲区有数据时，该事件会被通知，并且 data 被设置成可读数据的字节数。
+
+EVFILT_WRIT:当 socket 层的写入缓冲区可写入时，该事件将被通知；data 指示目前缓冲区有多少字节空闲空间。
+
+行为标志flags：
+EV_ADD：指示加入事件到 kqueue
+EV_DELETE：指示将传入的事件从 kqueue 中移除
+
+过滤器标识值：
+EV_ENABLE：过滤器事件可用，注册一个事件时，默认是可用的。
+EV_DISABLE：过滤器事件不可用，当内部描述可读或可写时，将不通知应用程序。
+
+bool Register(int kq, int fd) 
+{ 
+      struct kevent changes[1]; 
+      EV_SET(&changes[0], fd, EVFILT_READ, EV_ADD, 0, 0, NULL); 
+  
+      int ret = kevent(kq, changes, 1, NULL, 0, NULL); 
+  
+      return true; 
+}
+
+Register 将 fd 注册到 kq 中。注册的方法是通过 kevent() 将 eventlist 和 neventlist 置成 NULL 和 0 来达到的。
+
+人们一般将 socket IO 设置成非阻塞模式，以提高读写性能的同时，避免 IO 读写不小心被锁定。为了达到某种目的，有人会通过 getsocketopt 来偷看 socket 读缓冲区的数据大小或写缓区可用空间的大小。在 kevent 返回时，将读写缓冲区的可读字节数或可写空间大小告诉应用程序。基于这个特性，使用 kqueue 的应用一般不使用非阻塞 IO。每次读时，根据 kevent 返回的可读字节大小，将接收缓冲区中的数据一次性读完；而发送数据时，也根据 kevent 返回的写缓冲区可写空间的大小，一次只发可写空间大小的数据。
+-----------------------
+
+kqueue使用
+本文章向大家介绍kqueue使用，主要包括kqueue使用使用实例、应用技巧、基本知识点总结和需要注意事项，具有一定的参考价值，需要的朋友可以参考一下。
+
+网上搜了下关于kqueue的使用，感觉都不如意，自己翻译了一下，放在git上。
+
+英文手册: https://www.freebsd.org/cgi/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=FreeBSD+12.2-RELEASE+and+Ports&arch=default&format=html
+
+三个接口：
+
+int kqueue(void);
+kqueue()创建一个新的内核事件队列，返回一个文件描述符。如果有错误，将返回-1，并设置error。
+
+int kevent(
+    int    kq, 
+    const struct kevent    *changelist, 
+    int nchanges,
+    struct    kevent *eventlist, 
+    int nevents,
+    const struct timespec *timeout
+);
+参数changlist、eventlist都是指向kevent结构的指针，changelist是要监听的事件，如果事件发生，会放在eventlist里。
+
+函数返回放在eventlist里事件的数量，即放了多少个事件到eventlist。
+
+其中有个比较重要的设定，如果nevents值是0，那kevent()会立即返回；如果nevents不为0，且timeout指针为空，那么kevent()会永久阻塞，直到事件发生。
+
+EV_SET(kev, ident, filter, flags, fflags, data, udata);
+
+// kevent结构
+struct kevent {
+         uintptr_t    ident;         /*    identifier for this event */
+         short     filter;         /*    filter for event */
+         u_short   flags;         /*    action flags for kqueue    */
+         u_int     fflags;         /*    filter flag value */
+         int64_t   data;         /*    filter data value */
+         void      *udata;         /*    opaque user data identifier */
+         uint64_t  ext[4];         /*    extensions */
+ };
+宏EV_SET用来初始化kevent结构体。
+
+ident：一般是文件描述符，比如socket、文件等。
+
+filter：不知道怎么翻译，过滤器？
+
+flags：对这个kevent，对kqueue进行怎样操作，是添加到kqueue队列里监听，还是从kqueue队列里移除，需要指明。
+
+fflags：filter-flags，不同的filter有不同的fflags定义，得看是用的哪个filter。
+
+其他的参数用的时候再查。
+
+手册的kqueue例子
+
+#include <sys/event.h>
+#include <err.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(int argc, char **argv) {
+     struct    kevent event;     /* Event we want to monitor */
+     struct    kevent tevent;     /* Event triggered */
+     int kq, fd, ret;
+
+     if (argc != 2)
+         err(EXIT_FAILURE, "Usage: %s path\n", argv[0]);
+
+     // 打开文件，拿到文件描述符
+     fd = open(argv[1], O_RDONLY);
+     if (fd    == -1)
+         err(EXIT_FAILURE, "Failed to open '%s'", argv[1]);
+
+     /* Create kqueue. */
+     // 创建kqueue队列，返回描述符
+     kq = kqueue();
+     if (kq == -1)
+         err(EXIT_FAILURE, "kqueue() failed");
+  
+  // EV_SET(kev, ident,    filter,    flags, fflags, data, udata);
+  /*
+     初始化kevent结构体
+     ident：为文件描述符
+     EVFILE_VNODE： 用这个filter
+     EV_ADD：添加到kqueue
+     EV_CLEAR：每次事件被取走，状态重置
+     NOTE_WRITE：每当ident指向的文件描述符有写入时返回
+     不用太纠结为什么要用EVFILE_VNODE这个filter，按照官网来说，这个filter就是要用监听文件变化的。
+   */
+     EV_SET(&event,    fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_WRITE, 0,    NULL);
+
+     /* Attach event to the  kqueue.    */
+     // 还记得前面的设定么？nevents为0，立即返回，返回的值是kqueue放到eventlist里的事件数量，这里eventlist为NULL，所以返回的ret是0。
+     // 所以这个语句的作用是向kqueue注册要监听的事件，仅此而已
+     ret = kevent(kq, &event, 1, NULL, 0, NULL);
+
+     if (ret == -1) // 注册失败会返回-1
+         err(EXIT_FAILURE, "kevent register");
+
+     if (event.flags & EV_ERROR) // 有其他错误，会置flags的EV_RROR位为1，错误数据放在data字段
+         errx(EXIT_FAILURE,    "Event error: %s", strerror(event.data));
+
+     // 开启循环
+     for (;;) {
+         /*    Sleep until something happens. */
+         // 这里nevents不为0，eventlist为这NULL，且timeout为空指针，那会永久阻塞，直到有事件产生
+         ret = kevent(kq, NULL, 0, &tevent,    1, NULL);
+
+         if (ret ==    -1) {
+            err(EXIT_FAILURE, "kevent wait");
+
+         } else if (ret > 0) {
+
+            // 每当有东西写到文件里了，就会触发事件
+            printf("Something was written in '%s'\n", argv[1]);
+         }
+     }
+}
+
+
+保存为test.c文件，编译：
+gcc test.c o test
+新建一个文件:
+
+touch 1.txt
+
+执行一下：
+./test 1.txt
+测试一下往1.txt写点东西：
+
+echo "ewfwf " > 1.txt 
+会看打印 Something was written in '1.txt'。

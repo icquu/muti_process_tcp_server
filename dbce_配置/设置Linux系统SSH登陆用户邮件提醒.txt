@@ -1,0 +1,47 @@
+设置CentOS/Ubuntu/Debian系统SSH登陆用户邮件提醒
+2014-12-13 00:10:04 分类：主机教程
+为了确保我们VPS的安全，凡是有登陆SSH的我们会设置邮件提醒，也就是说即便我们自己用SSH登录VPS远程链接之后，也会有邮件提醒过来，汇报当前哪个IP登录我们的VPS系统。老左有看到这样的文章之前没有整理，现在整理出来针对CentOS/Ubuntu/Debian三个常用系统，经过测试之后都是可以使用的。
+
+设置CentOS/Ubuntu/Debian系统SSH登陆用户邮件提醒
+
+第一、Ubuntu/Debian系统环境
+
+A -登录SSH升级当前系统环境
+
+apt-get update
+
+B -编辑根目录下 ~/.bashrc文件，最下面添加下面脚本
+
+IP="$(echo $SSH_CONNECTION | cut -d " " -f 1)"
+HOSTNAME=$(hostname)
+NOW=$(date +"%e %b %Y, %a %r")
+echo 'Someone from '$IP' logged into '$HOSTNAME' on '$NOW'.' | mail -s 'SSH Login Notification' YOUR_EMAIL_ADDRESS
+
+在YOUR_EMAIL_ADDRESS更改成我们需要接受的邮箱账户。
+
+C - reboot重启VPS，然后我们再登录看看是否可以看到邮箱收到邮件
+
+设置CentOS/Ubuntu/Debian系统SSH登陆用户邮件提醒
+
+第二、CentOS系统
+
+A -登录SSH且编辑 ~/.bash_profile文件
+
+B -添加文件
+
+IP="$(echo $SSH_CONNECTION | cut -d " " -f 1)"
+HOSTNAME=$(hostname)
+NOW=$(date +"%e %b %Y, %a %r")
+echo 'Someone from '$IP' logged into '$HOSTNAME' on '$NOW'.' | mail -s 'SSH Login Notification' YOUR_EMAIL_ADDRESS
+
+在YOUR_EMAIL_ADDRESS更改成我们需要接受的邮箱账户。
+
+PS：如果有出现登录不提示邮件发送，出现-bash: mail: command not found错误信息怎么解决？
+
+apt-get install mailutils #Ubuntu/Debian系统环境
+
+yum install mailx #CentOS系统
+
+对应系统安装组件，然后再重启就可以实现SSH登陆用户邮件提醒。
+
+总结，在使用VPS的时候安全性是必须要注意的，我们如果坚信密码的安全或者本地系统的安全，最好也做邮件提醒，万一有他人登录或者破解我们的密码导致VPS安全隐患。

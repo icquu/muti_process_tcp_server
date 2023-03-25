@@ -1,0 +1,3113 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)https://www.cnblogs.com/poloyy/p/13363123.html -->
+<html lang="zh-cn" style="--olcb-folder-code-block-max-height:80vh;"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="origin-when-cross-origin">
+    <meta name="description" content="做性能测试的必备知识系列，可以看下面链接的文章哦 https://www.cnblogs.com/poloyy/category/1806772.html 课前准备，安装 sysbench 下载 sy">
+    <meta property="og:description" content="做性能测试的必备知识系列，可以看下面链接的文章哦 https://www.cnblogs.com/poloyy/category/1806772.html 课前准备，安装 sysbench 下载 sy">
+    <meta http-equiv="Cache-Control" content="no-transform">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园</title>
+    <link id="favicon" rel="shortcut icon" href="https://files.cnblogs.com/files/poloyy/polo.bmp" type="image/svg+xml">
+    
+    <style>#home :not(.cnblogs_code):not(.cnblogs_Highlighter)>pre:not([highlighted]):not([class*="brush:"]) code:not(.hljs), :not(.cnblogs_code):not(.cnblogs_Highlighter)>pre:not([highlighted]):not([class*="brush:"]) code:not(.hljs) {background: rgb(245, 245, 245);
+        padding: 12px;
+        border: 0.666667px solid rgb(204, 204, 204);
+        border-radius: 3px;
+        border-color: transparent;
+        color: rgb(68, 68, 68);
+        font-family: "Courier New", sans-serif;
+        font-size: 12px</style><link rel="stylesheet" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/blog-common.min.css">
+    
+
+    
+        <link id="highlighter-theme-cnblogs" type="text/css" rel="stylesheet" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/cnblogs.css">
+    <link type="text/css" rel="stylesheet" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/custom.css">
+    
+    <link id="mobile-style" media="only screen and (max-width: 767px)" type="text/css" rel="stylesheet" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/bundle-simplememory-mobile-pure.min.css">
+    
+    <link type="application/rss+xml" rel="alternate" href="https://www.cnblogs.com/poloyy/rss">
+    <link type="application/rsd+xml" rel="EditURI" href="https://www.cnblogs.com/poloyy/rsd.xml">
+    <link type="application/wlwmanifest+xml" rel="wlwmanifest" href="https://www.cnblogs.com/poloyy/wlwmanifest.xml">
+    <script type="text/javascript" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/encoder.js.下载"></script><script>
+        var currentBlogId = 567504;
+        var currentBlogApp = 'poloyy';
+        var isLogined = false;
+        var isBlogOwner = false;
+        var skinName = 'SimpleMemory';
+        var visitorUserId = '';
+        var hasCustomScript = true;
+        try {
+            if (hasCustomScript && document.referrer && document.referrer.indexOf('baidu.com') >= 0) {
+                Object.defineProperty(document, 'referrer', { value: '' });
+                Object.defineProperty(Document.prototype, 'referrer', { get: function () { return ''; } });
+            }
+        } catch (error) { }
+        window.cb_enable_mathjax = false;
+        window.mathEngine = 0;
+        window.codeHighlightEngine = 1;
+        window.enableCodeLineNumber = false;
+        window.codeHighlightTheme = 'cnblogs';
+        window.darkModeCodeHighlightTheme = 'vs2015';
+        window.isDarkCodeHighlightTheme = false;
+        window.isDarkModeCodeHighlightThemeDark = true;
+        window.isDisableCodeHighlighter = false;
+        window.enableCodeThemeTypeFollowSystem = false;
+    </script>
+        <script>
+            var currentPostDateAdded = '2020-07-23 20:28';
+        </script>
+    <script src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/jquery-2.2.0.min.js.下载"></script>
+    <script src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/blog-common.min.js.下载"></script><style>.medium-zoom-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 300ms;
+  will-change: opacity;
+}
+
+.medium-zoom--opened .medium-zoom-overlay {
+  cursor: pointer;
+  cursor: zoom-out;
+  opacity: 1;
+}
+
+.medium-zoom-image {
+  cursor: pointer;
+  cursor: zoom-in;
+  /*
+    The `transition` is marked as "!important" for the animation to happen
+    even though it's overriden by another inline `transition` style attribute.
+
+    This is problematic with frameworks that generate inline styles on their
+    images (e.g. Gatsby).
+
+    See https://github.com/francoischalifour/medium-zoom/issues/110
+   */
+  transition: transform 300ms cubic-bezier(0.2, 0, 0.2, 1) !important;
+}
+
+.medium-zoom-image--hidden {
+  visibility: hidden;
+}
+
+.medium-zoom-image--opened {
+  position: relative;
+  cursor: pointer;
+  cursor: zoom-out;
+  will-change: transform;
+}
+</style><script id="hljs-script" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/highlight.min.js.下载" type="text/javascript" async=""></script>
+    
+
+    
+<link rel="stylesheet" type="text/css" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/page-common-comArticle.dc38fcc1.css"><link rel="stylesheet" type="text/css" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/page-article.dc38fcc1.css"><link rel="stylesheet" type="text/css" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/comBefore.dc38fcc1.css"><link rel="stylesheet" type="text/css" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/fonticon.dc38fcc1.css"><link rel="stylesheet" type="text/css" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/google-fonts.dc38fcc1.css"><link rel="stylesheet" type="text/css" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/nhBannerAnimation.dc38fcc1.css"><link rel="stylesheet" type="text/css" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/atom-one-dark-css.dc38fcc1.css"></head>
+<body class="skin-simplememory no-navbar" style="overflow: auto;" data-bs-spy="scroll" data-bs-target="#articleDirectory" data-bs-offset="0" tabindex="0">
+    <a name="top" style="display: none;"></a>
+    <div id="top_nav" class="navbar forpc navbar-custom">
+        <nav id="nav_main" class="navbar-main">
+            <ul id="nav_left" class="navbar-list navbar-left">
+                <li class="navbar-branding">
+                    <a href="https://www.cnblogs.com/" title="开发者的网上家园" role="banner">
+                            <img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/logo.svg" alt="博客园Logo">
+                    </a>
+                </li>
+                <li>
+                    <a href="https://www.cnblogs.com/" onclick="countClicks(&#39;skin-navbar-sitehome&#39;)">首页</a>
+                </li>
+                <li>
+                    <a href="https://news.cnblogs.com/" onclick="countClicks(&#39;nav&#39;, &#39;skin-navbar-news&#39;)">新闻</a>
+                </li>
+                <li>
+                    <a href="https://q.cnblogs.com/" onclick="countClicks(&#39;nav&#39;, &#39;skin-navbar-q&#39;)">博问</a>
+                </li>
+                <li>
+                    <a id="nav_brandzone" href="https://brands.cnblogs.com/" onclick="countClicks(&#39;nav&#39;, &#39;skin-navbar-brands&#39;)">专区</a>
+                </li>
+                <li>
+                    <a href="https://ing.cnblogs.com/" onclick="countClicks(&#39;nav&#39;, &#39;skin-navbar-ing&#39;)">闪存</a>
+                </li>
+                <li>
+                    <a href="https://edu.cnblogs.com/" onclick="countClicks(&#39;nav&#39;, &#39;skin-navbar-edu&#39;)">班级</a>
+                </li>
+            </ul>
+            <ul id="nav_right" class="navbar-list navbar-right">
+                <li>
+                    <form id="zzk_search" class="navbar-search dropdown" action="https://zzk.cnblogs.com/s" method="get" role="search">
+                        <input name="w" id="zzk_search_input" placeholder="代码改变世界" type="search" tabindex="3" autocomplete="off">
+                        <button id="zzk_search_button" onclick="window.navbarSearchManager.triggerActiveOption()">
+                            <img id="search_icon" class="focus-hidden" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/search.svg" alt="搜索">
+                            <img class="hidden focus-visible" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/enter.svg" alt="搜索">
+                        </button>
+                        <ul id="navbar_search_options" class="dropdown-menu quick-search-menu">
+                            <li tabindex="0" class="active" onclick="zzkSearch(event, document.getElementById(&#39;zzk_search_input&#39;).value)">
+                                <div class="keyword-wrapper">
+                                    <img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/search.svg" alt="搜索">
+                                    <div class="keyword"></div>
+                                </div>
+                                <span class="search-area">所有博客</span>
+                            </li>
+                                    <li tabindex="1" onclick="zzkBlogSearch(event, &#39;poloyy&#39;, document.getElementById(&#39;zzk_search_input&#39;).value)">
+                                        <div class="keyword-wrapper">
+                                            <img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/search.svg" alt="搜索">
+                                            <div class="keyword"></div>
+                                        </div>
+                                        <span class="search-area">当前博客</span>
+                                    </li>
+                        </ul>
+                    </form>
+                </li>
+                <li id="navbar_login_status" class="navbar-list">
+                    <a class="navbar-user-info navbar-blog" href="https://i.cnblogs.com/EditPosts.aspx?opt=1" alt="写随笔" title="写随笔" style="display: none;">
+                        <img id="new_post_icon" class="navbar-icon" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/newpost.svg" alt="写随笔">
+                    </a>
+                    <a id="navblog-myblog-icon" class="navbar-user-info navbar-blog" href="https://passport.cnblogs.com/GetBlogApplyStatus.aspx" alt="我的博客" title="我的博客" style="display: none;">
+                        <img id="myblog_icon" class="navbar-icon" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/myblog.svg" alt="我的博客">
+                    </a>
+                    <a class="navbar-user-info navbar-message navbar-icon-wrapper" href="https://msg.cnblogs.com/" alt="短消息" title="短消息" style="display: none;">
+                        <img id="msg_icon" class="navbar-icon" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/message.svg" alt="短消息">
+                        <span id="msg_count" style="display: none"></span>
+                    </a>
+                    <a id="navbar_lite_mode_indicator" data-current-page="blog" style="display: none" href="javascript:void(0)" alt="简洁模式" title="简洁模式启用，您在访问他人博客时会使用简洁款皮肤展示">
+                        <img class="navbar-icon" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/lite-mode-on.svg" alt="简洁模式">
+                    </a>
+                    <div id="user_info" class="navbar-user-info dropdown" style="display: none;">
+                        <a class="dropdown-button" href="https://home.cnblogs.com/">
+                            <img id="user_icon" class="navbar-avatar" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/avatar-default.svg" alt="用户头像">
+                        </a>
+                        <div class="dropdown-menu">
+                            <a id="navblog-myblog-text" href="https://passport.cnblogs.com/GetBlogApplyStatus.aspx">我的博客</a>
+                            <a href="https://home.cnblogs.com/">我的园子</a>
+                            <a href="https://account.cnblogs.com/settings/account">账号设置</a>
+                            <a href="javascript:void(0)" id="navbar_lite_mode_toggle" title="简洁模式会使用简洁款皮肤显示所有博客">
+    简洁模式 <img id="navbar_lite_mode_on" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/lite-mode-check.svg" class="hide"><span id="navbar_lite_mode_spinner" class="hide">...</span>
+</a>
+                            <a href="javascript:void(0)" onclick="account.logout();">退出登录</a>
+                        </div>
+                    </div>
+                    <a class="navbar-anonymous" href="https://account.cnblogs.com/signup" style="display: inline;">注册</a>
+                    <a class="navbar-anonymous" href="javascript:void(0);" onclick="account.login()" style="display: inline;">登录</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    
+
+    <!--done-->
+<div id="home" style="margin-top: 258px;">
+<div id="header">
+	<div id="blogTitle">
+        <a id="lnkBlogLogo" href="https://www.cnblogs.com/poloyy/"><img id="blogLogo" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/logo.gif" alt="返回主页"></a>		
+		
+<!--done-->
+<h1><a id="Header1_HeaderTitle" class="headermaintitle HeaderMainTitle" href="https://www.cnblogs.com/poloyy/">阿菠萝阿瑶</a>
+</h1>
+<h2></h2>
+
+
+
+
+		
+	</div><!--end: blogTitle 博客的标题和副标题 -->
+	<div id="navigator">
+		
+<ul id="navList">
+<li><a id="blog_nav_sitehome" class="menu" href="https://www.cnblogs.com/">
+博客园</a>
+</li>
+<li>
+<a id="blog_nav_myhome" class="menu" href="https://www.cnblogs.com/poloyy/">
+首页</a>
+</li>
+<li>
+
+<a id="blog_nav_newpost" class="menu" href="https://i.cnblogs.com/EditPosts.aspx?opt=1">
+新随笔</a>
+</li>
+<li>
+<a id="blog_nav_contact" class="menu" href="https://msg.cnblogs.com/send/%E5%B0%8F%E8%8F%A0%E8%90%9D%E6%B5%8B%E8%AF%95%E7%AC%94%E8%AE%B0">
+联系</a></li>
+<li>
+<a id="blog_nav_rss" class="menu" href="javascript:void(0)" data-rss="https://www.cnblogs.com/poloyy/rss/">
+订阅</a>
+<!--<partial name="./Shared/_XmlLink.cshtml" model="Model" /></li>--></li>
+<li>
+<a id="blog_nav_admin" class="menu" href="https://i.cnblogs.com/">
+管理</a>
+</li>
+</ul>
+
+
+		<div class="blogStats">
+			<span id="stats_post_count">随笔 - 970&nbsp; </span>
+<span id="stats_article_count">文章 - 0&nbsp; </span>
+<span id="stats-comment_count">评论 - 1144&nbsp; </span>
+<span id="stats-total-view-count">阅读 - 
+<span title="总阅读数: 2827914">
+282万</span></span>
+
+		</div><!--end: blogStats -->
+	</div><!--end: navigator 博客导航栏 -->
+</div><!--end: header 头部 -->
+<div id="main">
+	<div id="mainContent">
+	<div class="forFlow">
+		<div id="post_detail">
+    <!--done-->
+    <div id="topics">
+        <div class="post">
+            <h1 class="postTitle">
+                
+<a id="cb_post_title_url" class="postTitle2 vertical-middle post-del-title" href="https://www.cnblogs.com/poloyy/p/13363123.html">
+    <span role="heading" aria-level="2">性能测试必备知识（6）- 如何查看“CPU 上下文切换”</span>
+    
+</a><button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button>
+
+            </h1>
+            <div class="clear"></div>
+            <div class="postBody">
+                <div id="cnblogs_post_body" class="blogpost-body blogpost-body-html">
+<p><span style="font-size: 18pt; color: rgba(210, 44, 74, 1)"><strong>做性能测试的必备知识系列，可以看下面链接的文章哦</strong></span></p>
+<p><a href="https://www.cnblogs.com/poloyy/category/1806772.html" rel="noopener">https://www.cnblogs.com/poloyy/category/1806772.html</a></p>
+<p>&nbsp;</p>
+<h2 tid="tid-hpctB2" id="tid-hpctB2">课前准备，安装 sysbench<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h2>
+<h4 tid="tid-PZyQhG" id="tid-PZyQhG">下载 sysbench<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<div class="cnblogs_code">
+<code-box id="code-B4CpP8"><button boxid="code-B4CpP8" type="button" class="clipboard code-copay-btn hljs-comment" data-clipboard-action="copy" data-clipboard-target="#code-B4CpP8 pre" aria-label="复制代码" style="opacity: 0; visibility: hidden;"><i class="iconfont icon-fuzhi1"></i></button><pre boxid="code-B4CpP8" style="border-radius: 4px; max-height: 120vh;" class="hljs awk code-pre-line"><code-line class="line-numbers-rows"></code-line>git clone https:<span class="hljs-regexp">//gi</span>thub.com<span class="hljs-regexp">/akopytov/</span>sysbench.git</pre></code-box>
+</div>
+<p>&nbsp;</p>
+<h4 tid="tid-it3BYk" id="tid-it3BYk">安装依赖<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<div class="cnblogs_code">
+<code-box id="code-2jp6dm"><button boxid="code-2jp6dm" type="button" class="clipboard code-copay-btn hljs-comment" data-clipboard-action="copy" data-clipboard-target="#code-2jp6dm pre" aria-label="复制代码" style="opacity: 0; visibility: hidden;"><i class="iconfont icon-fuzhi1"></i></button><pre boxid="code-2jp6dm" style="border-radius: 4px; max-height: 120vh;" class="hljs angelscript code-pre-line"><code-line class="line-numbers-rows"></code-line>yum install <span class="hljs-built_in">auto</span>conf <span class="hljs-built_in">auto</span>make libtool -y</pre></code-box>
+</div>
+<p>&nbsp;</p>
+<h4 tid="tid-MyEEFN" id="tid-MyEEFN">编译安装<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<div class="cnblogs_code">
+<code-box id="code-hjb5Mh"><button boxid="code-hjb5Mh" type="button" class="clipboard code-copay-btn hljs-comment" data-clipboard-action="copy" data-clipboard-target="#code-hjb5Mh pre" aria-label="复制代码" style="opacity: 0; visibility: hidden;"><i class="iconfont icon-fuzhi1"></i></button><pre boxid="code-hjb5Mh" style="border-radius: 4px; max-height: 120vh;" class="hljs jboss-cli code-pre-line"><code-line class="line-numbers-rows"></code-line><span class="hljs-keyword">cd</span> sysbench/
+<code-line class="line-numbers-rows"></code-line><span class="hljs-string">./autogen.sh</span>
+<code-line class="line-numbers-rows"></code-line><span class="hljs-string">./configure</span> <span class="hljs-params">--without-mysql</span>
+<code-line class="line-numbers-rows"></code-line>make &amp;&amp; make install</pre></code-box>
+</div>
+<p>&nbsp;</p>
+<h4 tid="tid-YsG356" id="tid-YsG356">百度云链接<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>链接：https://pan.baidu.com/s/1a9qR9GNzEbj1rkDp2wXfIw</p>
+<p>提取码：kone</p>
+<p>下载压缩包放到服务器，然后解压即可</p>
+<p>&nbsp;</p>
+<h2 tid="tid-T6fNw4" id="tid-T6fNw4">如何查看系统的上下文切换情况<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h2>
+<h4 tid="tid-bTG8xh" id="tid-bTG8xh">vmstat&nbsp;<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<ul>
+<li>使用 vmstat 这个工具，来查询系统的上下文切换情况</li>
+<li>vmstat 是一个常用的系统性能分析工具，主要用来分析系统的<span style="color: rgba(210, 44, 74, 1)"><strong>内存使用情况</strong></span>，也常用来<span style="color: rgba(210, 44, 74, 1)"><strong>分析 CPU 上下文切换和中断的次数</strong></span></li>
+</ul>
+<p>&nbsp;</p>
+<h3 tid="tid-ECM6Rt" id="tid-ECM6Rt">了解 vmstat 输出的参数含义<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>每隔 2s 输出一次结果</p>
+<div class="cnblogs_code">
+<code-box id="code-CRZAXM"><button boxid="code-CRZAXM" type="button" class="clipboard code-copay-btn hljs-comment" data-clipboard-action="copy" data-clipboard-target="#code-CRZAXM pre" aria-label="复制代码" style="opacity: 0; visibility: hidden;"><i class="iconfont icon-fuzhi1"></i></button><pre boxid="code-CRZAXM" style="border-radius: 4px; max-height: 120vh;" class="hljs apache code-pre-line"><code-line class="line-numbers-rows"></code-line><span class="hljs-attribute">vmstat</span> <span class="hljs-number">2</span></pre></code-box>
+</div>
+<p><a data-fancybox="gallery" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200722201850851-1012863121.png"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200722201850851-1012863121.png"></a></p>
+<p>这里我们只了解必备参数，后面有单独一篇文章展开来讲解 vmstat 命令</p>
+<h4 tid="tid-K6HGkD" id="tid-K6HGkD">参数分析<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<ul>
+<li><span style="color: rgba(210, 44, 74, 1)"><strong>cs（context switch）：</strong></span>每秒上下文切换的次数</li>
+<li><span style="color: rgba(210, 44, 74, 1)"><strong>in（interrupt）：</strong></span>每秒中断的次数</li>
+<li><span style="color: rgba(210, 44, 74, 1)"><strong>r（Running or Runnable）：</strong></span>就绪队列的长度，也就是正在运行和等待 CPU 的进程数</li>
+<li><span style="color: rgba(210, 44, 74, 1)"><strong>b（Blocked）：</strong></span>处于不可中断睡眠状态的进程数</li>
+</ul>
+<p>vmstat 只给出了系统总体的上下文切换情况，如何查看每个进程详细情况？答案是通过 pidstat</p>
+<p>&nbsp;</p>
+<h3 tid="tid-7eB4sE" id="tid-7eB4sE">通过 pidstat 查看进程上下文切换的情况<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>加上 -w 选项，每 3s 输出一次结果，共输出 3 次</p>
+<div class="cnblogs_code">
+<code-box id="code-EFNT2n"><button boxid="code-EFNT2n" type="button" class="clipboard code-copay-btn hljs-comment" data-clipboard-action="copy" data-clipboard-target="#code-EFNT2n pre" aria-label="复制代码" style="opacity: 0; visibility: hidden;"><i class="iconfont icon-fuzhi1"></i></button><pre boxid="code-EFNT2n" style="border-radius: 4px; max-height: 120vh;" class="hljs apache code-pre-line"><code-line class="line-numbers-rows"></code-line><span class="hljs-attribute">pidstat</span> -w <span class="hljs-number">3</span> <span class="hljs-number">3</span></pre></code-box>
+</div>
+<p><a data-fancybox="gallery" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200722202628655-472477797.png"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200722202628655-472477797.png"></a></p>
+<h4 tid="tid-tEdfxh" id="tid-tEdfxh">结果分析<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<ul>
+<li><span style="color: rgba(210, 44, 74, 1)"><strong>cswch：</strong></span>每秒自愿上下文切换</li>
+<li><span style="color: rgba(210, 44, 74, 1)"><strong>nvcswch：</strong></span>每秒非自愿上下文切换的次数</li>
+</ul>
+<p>&nbsp;</p>
+<h4 tid="tid-wGPmF8" id="tid-wGPmF8">自愿上下文切换<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<ul>
+<li>进程无法获取所需自愿，导致的上下文切换</li>
+<li><span style="color: rgba(210, 44, 74, 1)"><strong>栗子：</strong></span>I/O、内存等系统<span style="color: rgba(210, 44, 74, 1)"><strong>资源不足</strong></span>时，就会发生</li>
+</ul>
+<p>&nbsp;</p>
+<h4 tid="tid-G35MXF" id="tid-G35MXF">非自愿上下文切换<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<ul>
+<li>非自愿上下文切换，则是指进程由于时间片已到等原因，<span style="color: rgba(210, 44, 74, 1)"><strong>被系统强制调度</strong></span>，进而发生的上下文切换</li>
+<li><span style="color: rgba(210, 44, 74, 1)"><strong>栗子：</strong></span>大量进程都在<span style="color: rgba(210, 44, 74, 1)"><strong>争抢 CPU</strong> </span>时，就容易发生非自愿上下文切换</li>
+</ul>
+<p>&nbsp;</p>
+<h2 tid="tid-hk8HzS" id="tid-hk8HzS">通过栗子去看上下文切换<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h2>
+<h3 tid="tid-cQYwy6" id="tid-cQYwy6">前期准备<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<ul>
+<li>安装 sysbench：上面有提到了</li>
+<li>安装 sysstat：参考这篇文章，<a href="https://www.cnblogs.com/poloyy/p/13325507.html" rel="noopener">https://www.cnblogs.com/poloyy/p/13325507.html</a></li>
+<li>需要有一个虚拟机，我自己的虚拟机是 4核的哈</li>
+<li>等下会通过远程连接工具来远程虚拟机，然后需要三个终端均访问我的虚拟机</li>
+</ul>
+<p>&nbsp;</p>
+<h3 tid="tid-fXGZFF" id="tid-fXGZFF">sysbench 介绍<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<ul>
+<li>一个<span style="color: rgba(210, 44, 74, 1)"><strong>多线程</strong></span>的基准测试工具（前面讲的 stress 是多进程）</li>
+<li>一般用来评估不同系统参数下的数据库负载情况</li>
+<li>在接下来的案例中，主要是当成一个异常进程来看，作用是<span style="color: rgba(210, 44, 74, 1)"><strong>模拟上下文切换过多的问题</strong></span></li>
+</ul>
+<p>&nbsp;</p>
+<h3 tid="tid-GmR3MB" id="tid-GmR3MB">空闲系统的上下文切换次数<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>输入以下命令，每 1 秒输出一次结果，输出 5 次</p>
+<div class="cnblogs_code">
+<code-box id="code-JkBMQ6"><button boxid="code-JkBMQ6" type="button" class="clipboard code-copay-btn hljs-comment" data-clipboard-action="copy" data-clipboard-target="#code-JkBMQ6 pre" aria-label="复制代码" style="opacity: 0; visibility: hidden;"><i class="iconfont icon-fuzhi1"></i></button><pre boxid="code-JkBMQ6" style="border-radius: 4px; max-height: 120vh;" class="hljs apache code-pre-line"><code-line class="line-numbers-rows"></code-line><span class="hljs-attribute">vmstat</span> <span class="hljs-number">1</span> <span class="hljs-number">5</span></pre></code-box>
+</div>
+<p><a data-fancybox="gallery" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723165052728-2000483147.png"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723165052728-2000483147.png"></a></p>
+<h4 tid="tid-jyWNse" id="tid-jyWNse">结果分析<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<ul>
+<li>现在的上下文切换次数 <span style="color: rgba(210, 44, 74, 1)"><strong>cs</strong> </span>是 200-300左右，而中断次数 <span style="color: rgba(210, 44, 74, 1)"><strong>in</strong> </span>是 200 左右，r 和 b 都是 0。</li>
+<li>因为这会儿并没有运行其他任务，所以它们就是空闲系统的上下文切换次数</li>
+</ul>
+<p>&nbsp;</p>
+<h3 tid="tid-YjbXXP" id="tid-YjbXXP">第一个终端运行 sysbench<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>输入以下命令，以 10 个线程运行 5 分钟的基准测试，模拟多线程切换的问题</p>
+<div class="cnblogs_code">
+<code-box id="code-ZRiEyf"><button boxid="code-ZRiEyf" type="button" class="clipboard code-copay-btn hljs-comment" data-clipboard-action="copy" data-clipboard-target="#code-ZRiEyf pre" aria-label="复制代码" style="opacity: 0; visibility: hidden;"><i class="iconfont icon-fuzhi1"></i></button><pre boxid="code-ZRiEyf" style="border-radius: 4px; max-height: 120vh;" class="hljs routeros code-pre-line"><code-line class="line-numbers-rows"></code-line>sysbench <span class="hljs-attribute">--threads</span>=10 <span class="hljs-attribute">--time</span>=300 threads run</pre></code-box>
+</div>
+<p>&nbsp;</p>
+<h3 tid="tid-QhKbe3" id="tid-QhKbe3">第二个终端通过 vmstat 查看上下文切换<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<div class="cnblogs_code">
+<code-box id="code-h8HzJA"><button boxid="code-h8HzJA" type="button" class="clipboard code-copay-btn hljs-comment" data-clipboard-action="copy" data-clipboard-target="#code-h8HzJA pre" aria-label="复制代码" style="opacity: 0; visibility: hidden;"><i class="iconfont icon-fuzhi1"></i></button><pre boxid="code-h8HzJA" style="border-radius: 4px; max-height: 120vh;" class="hljs apache code-pre-line"><code-line class="line-numbers-rows"></code-line><span class="hljs-attribute">vmstat</span> <span class="hljs-number">1</span></pre></code-box>
+</div>
+<p><a data-fancybox="gallery" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723165958132-362429611.png"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723165958132-362429611.png"></a></p>
+<h4 tid="tid-eKxb2s" id="tid-eKxb2s">结果分析<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<ul>
+<li><span style="color: rgba(210, 44, 74, 1)"><strong>cs 列：</strong></span>上下文切换次数从之前 200 骤然上升到了 160w+...</li>
+<li><span style="color: rgba(210, 44, 74, 1)"><strong>r 列：</strong></span>就绪队列的长度最大到 8了，大于我们的 CPU 个数 4，所以会<span style="color: rgba(210, 44, 74, 1)"><strong>存在大量的 CPU 竞争</strong></span></li>
+<li><span style="color: rgba(210, 44, 74, 1)"><strong>us、sy 列：</strong></span>两列的 CPU 使用率加起来上升到了 80-90，其中系统 CPU 使用率都是 60%+，说明<span style="color: rgba(210, 44, 74, 1)"><strong> CPU 主要是被内核占用了</strong></span></li>
+<li><span style="color: rgba(210, 44, 74, 1)"><strong>in 列：</strong></span>中断次数已经达到 8w 了...说明<span style="color: rgba(210, 44, 74, 1)"><strong>中断处理也是个潜在的问题</strong></span></li>
+</ul>
+<p>&nbsp;</p>
+<h4 tid="tid-46AQBS" id="tid-46AQBS">总结下<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<ul>
+<li>系统的就绪队列过长，也就是正在运行和等待 CPU 的进程数过多，导致了大量的上下文切换，而上下文切换又导致了 CPU 使用率升高</li>
+<li>一环扣一环的，先有因后有果，别搞乱了顺序</li>
+</ul>
+<p>&nbsp;</p>
+<h4 tid="tid-3kyJCt" id="tid-3kyJCt">提出疑问<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>到底是什么进程导致了这些问题呢？</p>
+<p>&nbsp;</p>
+<h3 tid="tid-d4jBsA" id="tid-d4jBsA">第三个终端通过 pidstat 来看进程的上下文切换次数<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>输入以下命令，-w 输出进程切换指标，-u 输出 CPU 使用情况</p>
+<div class="cnblogs_code">
+<code-box id="code-fyQ8bx"><button boxid="code-fyQ8bx" type="button" class="clipboard code-copay-btn hljs-comment" data-clipboard-action="copy" data-clipboard-target="#code-fyQ8bx pre" aria-label="复制代码"><i class="iconfont icon-fuzhi1"></i></button><pre boxid="code-fyQ8bx" style="border-radius: 4px; max-height: 120vh;" class="hljs apache code-pre-line"><code-line class="line-numbers-rows"></code-line><span class="hljs-attribute">pidstat</span> -w -u <span class="hljs-number">1</span></pre></code-box>
+</div>
+<p><a data-fancybox="gallery" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723172605945-623947733.png"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723172605945-623947733.png"></a></p>
+<h4 tid="tid-AYTdyE" id="tid-AYTdyE">结果分析<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<ul>
+<li>sysbench 进程 CPU 使用率很高，已经差不多占用了 4 个 CPU 了</li>
+<li>但上下文切换次数多主要是其他进程，包括内核线程 kworker</li>
+<li>貌似所有进程加起来的上下文切换次数也就几百，远不如 vmstat 看到的上百万，咋肥事！</li>
+</ul>
+<p>&nbsp;</p>
+<h3 tid="tid-tPhkhh" id="tid-tPhkhh">分析下为什么上下文切换次数会这么少<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<ul>
+<li>首先，Linux 调度的基本单位是线程</li>
+<li>sysbench 是模拟线程的调度问题</li>
+</ul>
+<p>&nbsp;</p>
+<h4 tid="tid-iGXWTr" id="tid-iGXWTr">查看 pidstat 命令的作用<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<div class="cnblogs_code">
+<code-box id="code-taFpZt"><button boxid="code-taFpZt" type="button" class="clipboard code-copay-btn hljs-comment" data-clipboard-action="copy" data-clipboard-target="#code-taFpZt pre" aria-label="复制代码"><i class="iconfont icon-fuzhi1"></i></button><pre boxid="code-taFpZt" style="border-radius: 4px; max-height: 120vh;" class="hljs ebnf code-pre-line"><code-line class="line-numbers-rows"></code-line><span class="hljs-attribute">man pidstat</span></pre></code-box>
+</div>
+<p><a data-fancybox="gallery" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723174033728-1760518125.png"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723174033728-1760518125.png"></a></p>
+<p>&nbsp;</p>
+<p>有那么一句英文，可以看到，pidstat 默认显示<span style="color: rgba(210, 44, 74, 1)"><strong>进程</strong></span>级别的指标数据</p>
+<p><a data-fancybox="gallery" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723174159989-866530322.png"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723174159989-866530322.png"></a></p>
+<ul>
+<li>然后往下翻，可以看到 <span style="color: rgba(210, 44, 74, 1)"><strong>-t</strong></span> 参数</li>
+<li>它可以显示与选定任务关联的<span style="color: rgba(210, 44, 74, 1)"><strong>线程</strong></span>的统计信息</li>
+</ul>
+<p>&nbsp;</p>
+<h4 tid="tid-nC77yn" id="tid-nC77yn">第三个终端重新执行 pidstat 命令<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<div class="cnblogs_code">
+<code-box id="code-Q3kRGk"><button boxid="code-Q3kRGk" type="button" class="clipboard code-copay-btn hljs-comment" data-clipboard-action="copy" data-clipboard-target="#code-Q3kRGk pre" aria-label="复制代码" style="opacity: 0; visibility: hidden;"><i class="iconfont icon-fuzhi1"></i></button><pre boxid="code-Q3kRGk" style="border-radius: 4px; max-height: 120vh;" class="hljs apache code-pre-line"><code-line class="line-numbers-rows"></code-line><span class="hljs-attribute">pidstat</span> -wt <span class="hljs-number">1</span> <span class="hljs-number">10</span></pre></code-box>
+</div>
+<p><a data-fancybox="gallery" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723174653996-1913203023.png"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723174653996-1913203023.png"></a></p>
+<h4 tid="tid-5ZkMnx" id="tid-5ZkMnx">结果分析<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>sysbench 的多个线程的上下文切换次数有非常多，终于找到罪魁祸首了</p>
+<p>&nbsp;</p>
+<h3 tid="tid-ctsFNt" id="tid-ctsFNt">分析为什么中断次数也颇高<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h3>
+<p>前面也说到 in 值达到了 8w，那是什么导致中断次数如此之高呢，接下来瞧一瞧</p>
+<p>&nbsp;</p>
+<h4 tid="tid-hk84GC" id="tid-hk84GC">首先<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>中断处理，它只发生在内核态，而 pidstat 只是一个<span style="color: rgba(210, 44, 74, 1)"><strong>进程的性能分析工具</strong></span>，并不提供任何关于中断的详细信息</p>
+<p>&nbsp;</p>
+<h4 tid="tid-JmAnr3" id="tid-JmAnr3">如何查看中断发生的类型<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>从&nbsp;&nbsp;<span class="cnblogs_code">/proc/interrupts</span>&nbsp; 这个只读文件中读取</p>
+<p>&nbsp;<span class="cnblogs_code">/proc</span>&nbsp;&nbsp;实际上是 Linux 的一个虚拟文件系统，用于<span style="color: rgba(210, 44, 74, 1)"><strong>内核空间与用户空间之间的通信</strong></span></p>
+<p>&nbsp;</p>
+<h4 tid="tid-J2JsEP" id="tid-J2JsEP">继续在第三个终端执行命令<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<div class="cnblogs_code">
+<code-box id="code-anzf5m"><button boxid="code-anzf5m" type="button" class="clipboard code-copay-btn hljs-comment" data-clipboard-action="copy" data-clipboard-target="#code-anzf5m pre" aria-label="复制代码" style="opacity: 0; visibility: hidden;"><i class="iconfont icon-fuzhi1"></i></button><pre boxid="code-anzf5m" style="border-radius: 4px; max-height: 120vh;" class="hljs awk code-pre-line"><code-line class="line-numbers-rows"></code-line>watch -d cat <span class="hljs-regexp">/proc/i</span>nterrupts</pre></code-box>
+</div>
+<p><a data-fancybox="gallery" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723200756342-1036073401.png"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/1896874-20200723200756342-1036073401.png"></a></p>
+<h4 tid="tid-76yE4n" id="tid-76yE4n">结果分析<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<ul>
+<li>观察一段时间，可以发现变化速度最快的是<span style="color: rgba(210, 44, 74, 1)"><strong>重调度中断</strong></span>（RES），表示唤醒空闲状态的 CPU 来调度新的任务运行</li>
+<li>这是<span style="color: rgba(210, 44, 74, 1)"><strong>多处理器系统</strong></span>（SMP）中，调度器用来分散任务到不同 CPU 的机制，通常也被称为<span style="color: rgba(210, 44, 74, 1)"><span style="color: rgba(210, 44, 74, 1)"><strong>处理器间中断</strong></span></span>（Inter-Processor Interrupts， IPI）</li>
+</ul>
+<p>&nbsp;</p>
+<h4 tid="tid-ZEA7tR" id="tid-ZEA7tR">总结<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>中断次数升高还是因为<span style="color: rgba(210, 44, 74, 1)"><strong>多任务的调度问题</strong></span>，和前面线程上下文切换次数的分析结果是一致的</p>
+<p>&nbsp;</p>
+<h2 tid="tid-GTcHfs" id="tid-GTcHfs">每秒上下文切换多少次才算正常？<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h2>
+<ul>
+<li>这个数值其实取决于系统本身的 CPU 性能</li>
+<li>如果系统的上下文切换次数比较稳定，那么<span style="color: rgba(210, 44, 74, 1)"><strong>数百到一万以内</strong></span>，都是正常的</li>
+<li>但当上下文切换次数超过一万次，或者切换次数出现数量级的增长时，就很可能已经出现了性能问题</li>
+</ul>
+<p>&nbsp;</p>
+<h4 tid="tid-yFJkpr" id="tid-yFJkpr">深入分析<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h4>
+<p>根据上下文切换的类型，具体分析</p>
+<ol>
+<li>自愿上下文切换多了，说明进程都在<span style="color: rgba(210, 44, 74, 1)"><strong>等待资源</strong></span>，有可能发生了 I/O 等其他问题</li>
+<li>非自愿上下文切换多了，说明进程都在<span style="color: rgba(210, 44, 74, 1)"><strong>被强制调度</strong></span>，也就是都在争抢 CPU，说明 CPU 的确成了瓶颈</li>
+<li>中断次数变多了，说明 CPU 被<span style="color: rgba(210, 44, 74, 1)"><strong>中断处理程序占用</strong></span>，还需要通过&nbsp;<span class="cnblogs_code">/pro/interrupts</span>&nbsp; 文件来分析具体的中断类型</li>
+</ol>
+<p>&nbsp;</p>
+<h2 tid="tid-4ai2rd" id="tid-4ai2rd">全文总结-如何查看分析上下文切换<button class="cnblogs-toc-button" title="显示目录导航" aria-expanded="false"></button></h2>
+<ul>
+<li>通过 <span style="color: rgba(210, 44, 74, 1)"><strong>vmstat</strong> </span>确认<span style="color: rgba(210, 44, 74, 1)"><strong>系统</strong></span>的当前的上下文切换（cs）、中断次数（in）、就绪队列（r）、CPU 使用率（us、sy）</li>
+<li>若上下文切换次数和 CPU 使用率过高，通过 pidstat 查看是哪个<span style="color: rgba(210, 44, 74, 1)"><strong>进程或线程</strong></span>的切换次数过高，CPU 使用率过高</li>
+<li>然后确认是自愿上下文切换还是非自愿上下文切换，从而深入分析是否存在其他系统瓶颈问题</li>
+<li>若中断次数过高，通过&nbsp;<span class="cnblogs_code">/proc/interrupts</span>&nbsp;分析是哪种中断类型&nbsp;</li>
+</ul>
+<p>&nbsp;</p>
+<div> <nav id="articleDirectory" style="top: 263px; right: 0px; display: none;" class="articleDirectoryFixed"> <ul class="nav nav-pills"> <li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-hpctB2" goto="tid-hpctB2" onclick="return false;">课前准备，安装 sysbench</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-PZyQhG" goto="tid-PZyQhG" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;下载 sysbench</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-it3BYk" goto="tid-it3BYk" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;安装依赖</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-MyEEFN" goto="tid-MyEEFN" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;编译安装</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-YsG356" goto="tid-YsG356" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;百度云链接</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-T6fNw4" goto="tid-T6fNw4" onclick="return false;">如何查看系统的上下文切换情况</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-bTG8xh" goto="tid-bTG8xh" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vmstat&nbsp;</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-ECM6Rt" goto="tid-ECM6Rt" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;了解 vmstat 输出的参数含义</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-K6HGkD" goto="tid-K6HGkD" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;参数分析</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-7eB4sE" goto="tid-7eB4sE" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;通过 pidstat 查看进程上下文切换的情况</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-tEdfxh" goto="tid-tEdfxh" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;结果分析</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-wGPmF8" goto="tid-wGPmF8" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;自愿上下文切换</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-G35MXF" goto="tid-G35MXF" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;非自愿上下文切换</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-hk8HzS" goto="tid-hk8HzS" onclick="return false;">通过栗子去看上下文切换</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-cQYwy6" goto="tid-cQYwy6" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;前期准备</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-fXGZFF" goto="tid-fXGZFF" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;sysbench 介绍</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-GmR3MB" goto="tid-GmR3MB" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;空闲系统的上下文切换次数</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-jyWNse" goto="tid-jyWNse" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;结果分析</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-YjbXXP" goto="tid-YjbXXP" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;第一个终端运行 sysbench</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-QhKbe3" goto="tid-QhKbe3" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;第二个终端通过 vmstat 查看上下文切换</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-eKxb2s" goto="tid-eKxb2s" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;结果分析</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-46AQBS" goto="tid-46AQBS" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;总结下</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-3kyJCt" goto="tid-3kyJCt" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;提出疑问</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-d4jBsA" goto="tid-d4jBsA" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;第三个终端通过 pidstat 来看进程的上下文切换次数</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-AYTdyE" goto="tid-AYTdyE" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;结果分析</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-tPhkhh" goto="tid-tPhkhh" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;分析下为什么上下文切换次数会这么少</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-iGXWTr" goto="tid-iGXWTr" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;查看 pidstat 命令的作用</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-nC77yn" goto="tid-nC77yn" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;第三个终端重新执行 pidstat 命令</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-5ZkMnx" goto="tid-5ZkMnx" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;结果分析</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-ctsFNt" goto="tid-ctsFNt" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;分析为什么中断次数也颇高</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-hk84GC" goto="tid-hk84GC" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;首先</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-JmAnr3" goto="tid-JmAnr3" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;如何查看中断发生的类型</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-J2JsEP" goto="tid-J2JsEP" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;继续在第三个终端执行命令</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-76yE4n" goto="tid-76yE4n" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;结果分析</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-ZEA7tR" goto="tid-ZEA7tR" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;总结</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-GTcHfs" goto="tid-GTcHfs" onclick="return false;">每秒上下文切换多少次才算正常？</a></li><li class="nav-item"><a class="nav-link" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-yFJkpr" goto="tid-yFJkpr" onclick="return false;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;深入分析</a></li><li class="nav-item"><a class="nav-link active" href="https://www.cnblogs.com/poloyy/p/13363123.html#tid-4ai2rd" goto="tid-4ai2rd" onclick="return false;">全文总结-如何查看分析上下文切换</a></li> </ul> </nav> </div><span class="articleSuffix-flg"> <br><p class="essaySuffix-eof">__EOF__</p> <div id="articleSuffix"> <div class="articleSuffix-bg"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 147.78 155.96"> <path d="M10.5,99.81a1.9,1.9,0,0,0-.53-.09,1.66,1.66,0,0,0-1.64,1.65A1.64,1.64,0,0,0,10,103a1.57,1.57,0,0,0,.87-.25l26.76,26.82.45-1.08L11.52,101.91A1.65,1.65,0,0,0,10.5,99.81Zm-.13,2a.57.57,0,0,1-.8,0,.58.58,0,0,1-.17-.41.58.58,0,0,1,.57-.57h0a.57.57,0,0,1,.56.58A.55.55,0,0,1,10.37,101.77Z" style="fill:#c5c9e0"></path><path d="M56.15,117.58H39.06l0-.09a1.65,1.65,0,0,0-1.36-1H37.5a1.65,1.65,0,1,0,1.56,2.19H55.7L92.92,156h41.44v-1.08h-41Zm-18.25.94a.56.56,0,0,1-.79,0,.58.58,0,0,1-.17-.41.57.57,0,0,1,.56-.57h0a.58.58,0,0,1,.57.58A.54.54,0,0,1,37.9,118.52Z" style="fill:#c5c9e0"></path><path d="M23.52,50.32a1.65,1.65,0,0,0,1.55-1.11H55.28l48-48.13h31.06V0H102.85l-48,48.13H25.07a1.64,1.64,0,0,0-2.09-1,1.64,1.64,0,0,0,.54,3.2Zm0-2.21a.57.57,0,0,1,0,1.13.57.57,0,1,1,0-1.13Z" style="fill:#c5c9e0"></path><polygon points="102.86 0 102.86 0 102.86 0 102.86 0" style="fill:#c5c9e0"></polygon><path d="M107.72,12.14h26.64V11.07H107.27L57.4,61H3.09a1.66,1.66,0,0,0-1.45-.86H1.52A1.65,1.65,0,1,0,2.81,63a1.59,1.59,0,0,0,.45-.87H57.85ZM2.05,62.23a.57.57,0,0,1-.8,0,.58.58,0,0,1-.17-.41.57.57,0,0,1,.56-.57h.09a.57.57,0,0,1,.32,1Z" style="fill:#c5c9e0"></path><path d="M134.36,43.22V42.14h-22.3l-9.62,9.63a1.64,1.64,0,0,0-2.19.77,1.61,1.61,0,0,0-.17.71,1.65,1.65,0,1,0,3.29,0,1.61,1.61,0,0,0-.16-.72l9.3-9.32Zm-32.64,10.6a.57.57,0,0,1,0-1.13.57.57,0,0,1,0,1.13Z" style="fill:#c5c9e0"></path><path d="M147,52.3l-9,9H111.48a1.64,1.64,0,0,0-1.61-1.33h-.14a1.65,1.65,0,1,0,1.6,2.41h27.19l9.26-9.29L147,52.3Zm-37.15,9.85a.56.56,0,0,1-.56-.57h0a.56.56,0,0,1,.56-.56h0a.57.57,0,1,1,0,1.13Z" style="fill:#c5c9e0"></path><path d="M66.79,75.35l11,11.06h56.53V85.33H78.27l-11-11.06H49.49L37.12,86.67a1.64,1.64,0,0,0-2.09,1,1.61,1.61,0,0,0-.09.54,1.65,1.65,0,0,0,3.29,0,1.68,1.68,0,0,0-.26-.89l12-12ZM36.58,88.79a.57.57,0,1,1,.57-.56A.57.57,0,0,1,36.58,88.79Z" style="fill:#c5c9e0"></path><path d="M110.61,95.55,92.8,113.4a1.62,1.62,0,1,0,.77.76l17.49-17.53h23.31V95.55ZM92.49,115.28a.56.56,0,0,1-.8,0,.58.58,0,0,1-.17-.41.57.57,0,0,1,.57-.57h0a.58.58,0,0,1,.56.58A.55.55,0,0,1,92.49,115.28Z" style="fill:#c5c9e0"></path><path d="M97.89,122.3H76.62L64.2,109.85a1.65,1.65,0,0,0-.77-2.2,1.77,1.77,0,0,0-.72-.17h-.14a1.65,1.65,0,0,0,.15,3.29,1.58,1.58,0,0,0,.71-.17l12.74,12.77H98.34l17.48-17.52h18.54v-1.08h-19ZM63.12,109.53a.56.56,0,0,1-.8,0,.58.58,0,0,1-.17-.41.57.57,0,0,1,1.14,0A.54.54,0,0,1,63.12,109.53Z" style="fill:#c5c9e0"></path> </svg> </div> <div class="articleSuffix-left"> <a data-fancybox="gallery" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/touxianga.bmp"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/touxianga.bmp"></a> </div> <div class="articleSuffix-right"> <item> <li> <b>本文作者：</b> <a href="https://www.cnblogs.com/poloyy" target="_blank">小菠萝测试笔记</a> </li> <li> <b>本文链接：</b> <a href="https://www.cnblogs.com/poloyy/p/13363123.html" target="_blank">https://www.cnblogs.com/poloyy/p/13363123.html</a> </li> <li> <b>关于博主：</b> 阿里高级测开工程师 - 让我装回杯 </li> <li> <b>版权声明：</b> 本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" alt="BY-NC-SA" title="BY-NC-SA" target="_blank">BY-NC-SA</a> 许可协议。转载请注明出处！ </li> <li> <b>声援博主：</b> 如果您觉得文章对您有帮助，可以点击文章右下角<strong><span style="color: #ff0000; font-size: 12pt;">【<a id="post-up" onclick="votePost(13363123,&#39;Digg&#39;)" href="javascript:void(0);">推荐</a>】</span></strong>一下。 </li> </item> </div> <div style="clear:both"></div> </div> </span></div>
+<div class="clear"></div>
+<div id="blog_post_info_block" role="contentinfo"><div id="BlogPostCategory">
+    分类: 
+            <a href="https://www.cnblogs.com/poloyy/category/1806772.html" target="_blank"><span class="iconfont icon-marketing_fill"></span>测试高级进阶技能系列 - 性能测试必备知识</a></div>
+<div id="EntryTag">
+    标签: 
+            <a href="https://www.cnblogs.com/poloyy/tag/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95%E5%BF%85%E5%A4%87%E7%9F%A5%E8%AF%86/"><span class="iconfont icon-label_fill"></span>性能测试必备知识</a></div>
+
+    <div id="blog_post_info">
+<div id="green_channel">
+        <a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(13363123,cb_blogId,1);green_channel_success(this,&#39;谢谢推荐！&#39;);">好文要顶</a><button class="custom-btn btn-11" onclick="DiggIt(13363123,cb_blogId,1);green_channel_success(this,&#39;谢谢推荐！&#39;);">推荐该文<div class="dot"></div></button>
+        <a id="green_channel_follow" onclick="follow(&#39;bfd58f0a-1e58-4ac0-e56e-08d77884eb28&#39;);" href="javascript:void(0);">关注我</a><button class="custom-btn btn-12" onclick="follow(&#39;bfd58f0a-1e58-4ac0-e56e-08d77884eb28&#39;);"><span>关注博主</span><span>关注博主</span></button>
+    <a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a><button class="custom-btn btn-7" onclick="AddToWz(cb_entryId);return false;"><span>收藏本文</span></button>
+    <a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/icon_weibo_24.png" alt=""></a><button class="custom-btn btn-15" onclick="ShareToTsina()">分享微博</button>
+    <a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/wechat.png" alt=""></a><button class="custom-btn btn-13" onclick="shareOnWechat()">分享微信</button>
+</div>
+<div id="author_profile">
+    <div id="author_profile_info" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/poloyy/" target="_blank"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/20191225235209.png" class="author_avatar" alt=""></a>
+        <div id="author_profile_detail" class="author_profile_info">
+            <a href="https://home.cnblogs.com/u/poloyy/">小菠萝测试笔记</a><br>
+            <a href="https://home.cnblogs.com/u/poloyy/followers/">粉丝 - <span class="follower-count">3657</span></a>
+            <a href="https://home.cnblogs.com/u/poloyy/followees/">关注 - <span class="following-count">11</span></a><br>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div id="author_profile_honor"></div>
+    <div id="author_profile_follow" class="follow-tip">
+                <a href="javascript:void(0);" onclick="follow(&#39;bfd58f0a-1e58-4ac0-e56e-08d77884eb28&#39;);return false;">+加关注</a>
+    </div>
+</div>
+<div id="div_digg">
+    <div class="diggit" onclick="votePost(13363123,&#39;Digg&#39;)"><i class="iconfont icon-zan1"></i>
+        <span class="diggnum" id="digg_count">2</span>
+    </div>
+    <div class="buryit" onclick="votePost(13363123,&#39;Bury&#39;)"><i class="iconfont icon-buzan"></i>
+        <span class="burynum" id="bury_count">0</span>
+    </div>
+    <div class="clear"></div>
+    <div class="diggword" id="digg_tips">
+    </div>
+</div>
+
+<script type="text/javascript">
+    currentDiggType = 0;
+</script></div>
+    <div class="clear"></div>
+    <div id="post_next_prev">
+
+    <a href="https://www.cnblogs.com/poloyy/p/13347635.html" class="p_n_p_prefix">« </a> 上一篇：    <a href="https://www.cnblogs.com/poloyy/p/13347635.html" data-featured-image="" title="发布于 2020-07-22 17:13">性能测试必备知识（5）- 深入理解“CPU 上下文切换”</a>
+    <br>
+    <a href="https://www.cnblogs.com/poloyy/p/13030898.html" class="p_n_p_prefix">» </a> 下一篇：    <a href="https://www.cnblogs.com/poloyy/p/13030898.html" data-featured-image="" title="发布于 2020-07-24 09:50">Cypress系列（41）- Cypress 的测试报告</a>
+
+</div>
+</div>
+            </div>
+            <div class="postDesc" style="display: block;">posted @ 
+<span id="post-date" data-last-update-days="966.7690053982824" data-date-created="BlogServer.Application.Dto.BlogPost.BlogPostDto" data-date-updated="2020-07-23 20:28" aria-expanded="false">2020-07-23 20:28</span>&nbsp;
+<a href="https://www.cnblogs.com/poloyy/">小菠萝测试笔记</a>&nbsp;
+阅读(<span id="post_view_count">2057</span>)&nbsp;
+评论(<span id="post_comment_count">0</span>)&nbsp;
+<a href="https://i.cnblogs.com/EditPosts.aspx?postid=13363123" rel="nofollow">编辑</a>&nbsp;
+<a href="javascript:void(0)" onclick="AddToWz(13363123);return false;">收藏</a>&nbsp;
+<a href="javascript:void(0)" onclick="reportManager.report({ currentUserId: &#39;&#39;, targetType: &#39;blogPost&#39;, targetId: &#39;13363123&#39;, targetLink: &#39;https://www.cnblogs.com/poloyy/p/13363123.html&#39;, title: &#39;性能测试必备知识（6）- 如何查看“CPU 上下文切换”&#39; })">举报</a>
+</div>
+        </div>
+	    
+	    
+    </div><!--end: topics 文章、评论容器-->
+</div>
+
+<script>
+    var cb_entryId = 13363123, cb_entryCreatedDate = '2020-07-23 20:28', cb_postType = 1, cb_postTitle = '性能测试必备知识（6）- 如何查看“CPU 上下文切换”';
+    var allowComments = true, cb_blogId = 567504, cb_blogApp = 'poloyy', cb_blogUserGuid = 'bfd58f0a-1e58-4ac0-e56e-08d77884eb28';
+    mermaidRender.render()
+    markdown_highlight()
+    zoomManager.apply("#cnblogs_post_body img:not(.code_img_closed):not(.code_img_opened)");
+    updatePostStats(
+            [cb_entryId],
+            function(id, count) { $("#post_view_count").text(count) },
+            function(id, count) { $("#post_comment_count").text(count) })
+</script>
+<a id="!comments"></a>
+<div id="blog-comments-placeholder"></div>
+<div id="comment_form" class="commentform">
+    <a name="commentform"></a>
+    <div id="divCommentShow"></div>
+    <div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="https://www.cnblogs.com/poloyy/p/13363123.html#" onclick="return RefreshPage();">刷新页面</a><a href="https://www.cnblogs.com/poloyy/p/13363123.html#top">返回顶部</a></div>
+    <div id="comment_form_container" style="visibility: visible;"><div class="login_tips">
+    登录后才能查看或发表评论，立即 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return account.login(&#39;!comments&#39;);">登录</a> 或者
+    <a href="https://www.cnblogs.com/">逛逛</a> 博客园首页
+</div>
+</div>
+    <div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+        <div id="cnblogs_ch"></div>
+    <div id="opt_under_post"></div>
+    <div id="cnblogs_c1" class="under-post-card" style="display: none;">
+            <div id="div-gpt-ad-1592365906576-0" style="width: 300px; height: 250px;"></div>
+    </div>
+    <div id="under_post_card1"><div class="under-post-card">
+<b>编辑推荐：</b>
+<br>
+
+· <a href="https://www.cnblogs.com/eventhorizon/p/17220585.html" target="_blank">.NET Task 揭秘：async 与 AsyncMethodBuilder</a>
+    <br>
+· <a href="https://www.cnblogs.com/huangxincheng/p/17214154.html" target="_blank">记一次 .NET某汽车零件采集系统 卡死分析</a>
+    <br>
+· <a href="https://www.cnblogs.com/1992monkey/p/17213598.html" target="_blank">关于如何编写好金融科技客户端 SDK 的思考</a>
+    <br>
+· <a href="https://www.cnblogs.com/s0611163/p/17199379.html" target="_blank">ASP.NET Core Web API 接口限流 </a>
+    <br>
+· <a href="https://www.cnblogs.com/cgli/p/17201943.html" target="_blank">生产环境 Java 应用服务内存泄漏分析与解决</a>
+    <br>
+</div></div>
+    <div id="under_post_card2"><div class="itnews under-post-card">
+    <b>阅读排行：</b>
+    <br>
+ ·          <a href="https://www.cnblogs.com/shanyou/p/17221052.html" target="_blank">为什么 C# 可能是最好的第一编程语言</a>
+        <br>
+ ·          <a href="https://www.cnblogs.com/shanyou/p/17220483.html" target="_blank">NET 8 预览版 2 亮点是Blazor</a>
+        <br>
+ ·          <a href="https://www.cnblogs.com/wenhanxiao/p/17220978.html" target="_blank">我的十年编程路 尾声</a>
+        <br>
+ ·          <a href="https://www.cnblogs.com/xueweihan/p/17225326.html" target="_blank">GPT-4 来了！这些开源的 GPT 应用又要变强了</a>
+        <br>
+ ·          <a href="https://www.cnblogs.com/chingho/p/17155494.html" target="_blank">一个.Net Core开源缓存中间件，让你更加简单、方便使用缓存</a>
+        <br>
+</div></div>
+    <div id="HistoryToday" class="under-post-card"></div>
+    <script type="text/javascript">
+        var commentManager = new blogCommentManager();
+        commentManager.renderComments(0);
+        fixPostBody();
+        window.footnoteTipManager.generateFootnoteTips();
+
+            window.tocManager.displayDisableTocTips = false;
+            window.tocManager.generateToc();
+            
+                setTimeout(function() { countViews(cb_blogId, cb_entryId); }, 50);
+            
+            deliverT2();
+            deliverC1C2();
+            loadNewsAndKb();
+            
+                LoadPostCategoriesTags(cb_blogId, cb_entryId);
+            
+            LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+            GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate, cb_postType);
+            loadOptUnderPost();
+            GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);
+                </script>
+</div>
+
+	</div><!--end: forFlow -->
+	</div><!--end: mainContent 主体内容容器-->
+	<div id="sideBar">
+		<div id="sideBarMain">
+			<div id="sidebar_news" class="newsItem"><div class="main-header" style="background: url(&quot;https://files.cnblogs.com/files/poloyy/beijing.bmp&quot;) center center / cover no-repeat rgb(34, 34, 34); height: 40vh;"> <div id="nhBannerAnimation"> <ul class="circles"> <li></li> <li></li> <li></li> <li></li> <li></li> <li></li> <li></li> <li></li> <li></li> <li></li> </ul> </div> <div class="vertical"> <div class="main-header-content inner" style="max-width: 100vw;"> <h1 class="page-title" id="homeTopTitle" style="display: none;"><span></span></h1> <h2 class="page-description" id="hitokoto"></h2> <h3 class="page-author" id="hitokotoAuthor"></h3> <h1 class="sb-title" id="sbTitle"> <span id="sbTitleText" style="color:#fff">
+    性能测试必备知识（6）- 如何查看“CPU 上下文切换”
+    </span> <span id="sbTitleConsole" style="visibility: hidden;">_</span> </h1> <p class="article-info" id="articleInfo"><p class="article-info-text"><span class="postMeta"><i class="iconfont icon-time1"></i>20/07/23 20:28<i class="iconfont icon-browse"></i>2057<i class="iconfont icon-interactive"></i>0<i class="iconfont icon-hot"></i>2<br><i class="iconfont icon-wenzi4"></i>4158<i class="iconfont icon-shangwutubiao-"></i>8:18 ~ 13:51</span></p><a href="https://www.cnblogs.com/poloyy/category/1806772.html" target="_blank"><span class="article-info-tag article-tag-class-color">测试高级进阶技能系列 - 性能测试必备知识</span></a><a href="https://www.cnblogs.com/poloyy/tag/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95%E5%BF%85%E5%A4%87%E7%9F%A5%E8%AF%86/" target="_blank"><span class="article-info-tag article-tag-color">性能测试必备知识</span></a></p> </div> </div> <a class="scroll-down" href="javascript:void(0);" data-offset="-45" style="display: none;"> <span class="hidden">Scroll Down</span> <i class="scroll-down-icon iconfont icon-fanhui"></i> </a> </div><div class="container"> <div class="menu-wrap optiscroll is-enabled" id="menuWrap" style="display:none"><div class=" optiscroll-content" style="right: -9px; bottom: -9px;"> <nav class="menu"> <div class="introduce-box" style="background: url(&quot;https://files.cnblogs.com/files/poloyy/menu.bmp&quot;) center center / 100% no-repeat rgb(0, 0, 0);"> <div class="introduce-head"> <div class="introduce-via" id="menuBlogAvatar"><img src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/touxianga.bmp"></div> </div> <div id="introduce">
+    昵称：
+    <a href="https://home.cnblogs.com/u/poloyy/">
+        小菠萝测试笔记
+    </a>
+    <br>
+    园龄：
+    <a href="https://home.cnblogs.com/u/poloyy/" title="入园时间：2019-12-12">
+        3年3个月
+    </a>
+    <br>
+    粉丝：
+    <a class="follower-count" href="https://home.cnblogs.com/u/poloyy/followers/">
+        3657
+    </a>
+    <br>
+    关注：
+    <a class="folowing-count" href="https://home.cnblogs.com/u/poloyy/followees/">
+        11
+    </a>
+    <div id="p_b_follow" class="follow-tip">
+<a href="javascript:void(0)" onclick="follow(&#39;bfd58f0a-1e58-4ac0-e56e-08d77884eb28&#39;)">+加关注</a></div>
+    
+</div> </div> <div class="nav-title"></div> <div class="icon-list"> <ul id="m-nav-list"> <li> <a href="https://www.cnblogs.com/poloyy" target="_self"> <i class="iconfont icon-homepage_fill"></i>首页 </a> </li> <li> <a href="https://msg.cnblogs.com/send/poloyy" target="_blank"> <i class="iconfont icon-zhifeiji"></i>联系 </a> </li> <li> <a href="javascript:void(0)" onclick="$(&quot;#blog_nav_rss&quot;).trigger(&quot;click&quot;)" data-rss="https://www.cnblogs.com/poloyy/rss/"> <i class="iconfont icon-qinmifu"></i>订阅 </a> </li> <li> <a href="https://i.cnblogs.com/" target="_blank"> <i class="iconfont icon-setup_fill"></i>管理 </a> </li><li><a href="https://i-beta.cnblogs.com/posts/edit" target="_blank"><i class="iconfont icon-qianzishenhe"></i>新随笔</a></li><li><a href="https://www.cnblogs.com/poloyy/p/13363123.html" target="_blank"><i class="iconfont icon-logo_QQ"></i>QQ：837493986</a></li><li><a href="https://www.cnblogs.com/poloyy/p/13363123.html" target="_blank"><i class="iconfont icon-logo-wechat"></i>WX：FJYpolo</a></li><li><a href="https://www.cnblogs.com/poloyy/p/13363123.html" target="_blank"><i class="iconfont icon-group_fill"></i>扣扣q：789930609</a></li></ul> </div> <span id="calendar-box"></span> <div class="m-list-title" style="display: block;"><span>找找看</span></div> <div class="m-icon-list" id="sb-sidebarSearchBox"><div id="sb_widget_my_zzk" class="div_my_zzk"><input id="q" type="text" onkeydown="return zzk_go_enter(event);" class="input_my_zzk"></div></div> <div class="m-list-title" style="display: block;"><span>积分排名<span class="iconfont icon-select m-list-title-select"></span></span> </div> <div class="m-icon-list" id="sb-sidebarScorerank"><div><ul><li><a href="javascript:void(0);"><span class="iconfont icon-collection_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>积分 -	
+1775524</a></li><li><a href="javascript:void(0);"><span class="iconfont icon-collection_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>排名 -	
+89</a></li></ul></div></div> <span id="menuCustomList"></span> <div class="m-list-title" style="display: block;"><span>最新随笔<span class="iconfont icon-select m-list-title-select"></span></span> </div> <div class="m-icon-list" id="sb-sidebarRecentposts"><div><ul><li><a href="https://www.cnblogs.com/poloyy/p/15675593.html"><span class="iconfont icon-time_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>重要通知！重要通知！不是广告！不是广告！</a></li><li><a href="https://www.cnblogs.com/poloyy/p/15565916.html"><span class="iconfont icon-time_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>crontab - 解决 mac 下通过 crontab 设置了 Python 脚本的定时任务却无法运行</a></li><li><a href="https://www.cnblogs.com/poloyy/p/15565875.html"><span class="iconfont icon-time_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Python - 抓取 iphone13 pro 线下店供货信息并发送到钉钉机器人，最后设置为定时任务</a></li><li><a href="https://www.cnblogs.com/poloyy/p/15565764.html"><span class="iconfont icon-time_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Python - 接入钉钉机器人</a></li><li><a href="https://www.cnblogs.com/poloyy/p/15549664.html"><span class="iconfont icon-time_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Effective Python（3）- 了解 bytes 与 str 的区别</a></li><li><a href="https://www.cnblogs.com/poloyy/p/15549557.html"><span class="iconfont icon-time_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Effective Python（2）- 遵循 PEP 8 风格指南</a></li><li><a href="https://www.cnblogs.com/poloyy/p/15549542.html"><span class="iconfont icon-time_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Python - 好用第三方库 isort</a></li><li><a href="https://www.cnblogs.com/poloyy/p/15549328.html"><span class="iconfont icon-time_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Effective Python（1）- 查询自己使用的Python版本</a></li><li><a href="https://www.cnblogs.com/poloyy/p/15549275.html"><span class="iconfont icon-time_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>fastapi（66）- 修改 uvicorn 的日志格式</a></li><li><a href="https://www.cnblogs.com/poloyy/p/15549265.html"><span class="iconfont icon-time_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Python - logging.Formatter 的常用格式字符串</a></li></ul></div></div> <div class="m-list-title" style="display: block;"><span>我的标签<span class="iconfont icon-select m-list-title-select"></span></span> </div> <div class="m-icon-list" id="sb-toptags"><div><ul><li><a href="https://www.cnblogs.com/poloyy/tag/Python/"><span class="iconfont icon-label_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Python(150)</a></li><li><a href="https://www.cnblogs.com/poloyy/tag/Cypress/"><span class="iconfont icon-label_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Cypress(103)</a></li><li><a href="https://www.cnblogs.com/poloyy/tag/Jmeter/"><span class="iconfont icon-label_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Jmeter(70)</a></li><li><a href="https://www.cnblogs.com/poloyy/tag/Docker/"><span class="iconfont icon-label_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Docker(68)</a></li><li><a href="https://www.cnblogs.com/poloyy/tag/FastAPI/"><span class="iconfont icon-label_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>FastAPI(66)</a></li><li><a href="https://www.cnblogs.com/poloyy/tag/Mysql%E5%B8%B8%E7%94%A8%E5%87%BD%E6%95%B0/"><span class="iconfont icon-label_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Mysql常用函数(42)</a></li><li><a href="https://www.cnblogs.com/poloyy/tag/Jmeter%20%E5%B8%B8%E7%94%A8%E5%87%BD%E6%95%B0/"><span class="iconfont icon-label_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Jmeter 常用函数(33)</a></li><li><a href="https://www.cnblogs.com/poloyy/tag/Pytest/"><span class="iconfont icon-label_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Pytest(31)</a></li><li><a href="https://www.cnblogs.com/poloyy/tag/Git/"><span class="iconfont icon-label_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Git(29)</a></li><li><a href="https://www.cnblogs.com/poloyy/tag/Mysql%E5%B8%B8%E7%94%A8sql%E8%AF%AD%E5%8F%A5/"><span class="iconfont icon-label_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Mysql常用sql语句(24)</a></li><li><a href="https://www.cnblogs.com/poloyy/tag/"><span class="iconfont icon-label_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>更多</a></li></ul></div></div> <div class="m-list-title" style="display: block;"><span>随笔分类<span class="iconfont icon-select m-list-title-select"></span></span> </div> <div class="m-icon-list" id="sb-classify"><div><ul><li><a href="https://www.cnblogs.com/poloyy/category/1672461.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Grafana搭建性能监控平台系列(2)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1628980.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必备软技能 -  提升工作效率(2)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1672475.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必知必会系列 - Git(29)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1672457.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必知必会系列 - Linux命令(25)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/2061142.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必知必会系列 - Mysql(4)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1765164.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必知必会系列 - Mysql常用函数(42)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1683347.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必知必会系列 - Mysql常用语句(27)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1629615.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必知必会系列 - 操作系统(1)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1620793.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必知必会系列 - 测试基础知识(13)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1625535.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必知必会系列 - 计算机网络(11)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1629214.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必知必会系列 - 前端基础知识(2)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1796055.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必知必会系列 - 正则表达式(9)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1620794.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必知必会系列 - 抓包工具(3)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1672557.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试必知必会系列 - 自动化测试工具(1)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1966428.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - Ansible(1)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1693896.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - Appium(15)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1768839.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - Cypress(103)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1870863.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - Docker(66)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1998250.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - FastAPI(66)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1998249.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - Flask(12)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1623190.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - Java基础(7)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1645399.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - Jenkins、CI/CD(13)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1746599.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - Jmeter(69)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1805867.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - Jmeter常用函数(32)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1981545.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - MongoDB(15)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1690628.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - Pytest(31)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1770899.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - Robot Framework(15)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1986240.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - wrk(2)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1954356.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - 算法(2)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1620792.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - 性能测试(5)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1806772.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - 性能测试必备知识(11)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1814570.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试高级进阶技能系列 - 性能分析(7)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1876953.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试进阶知识系列 - adb、Monkey(7)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1678719.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试进阶知识系列 - Linux进阶知识(7)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1629158.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试进阶知识系列 - Python (137)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1680176.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试进阶知识系列 - Python+Selenium系列(17)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1676599.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试进阶知识系列 - Python基础习题集(17)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1632492.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试进阶知识系列 - Python接口自动化系列(10)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1620791.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试进阶知识系列 - 安全测试(4)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1620795.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试进阶知识系列 - 接口测试(2)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1665013.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试进阶知识系列 - 数据结构(2)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1819490.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试进阶知识系列 - 性能测试必备的 Linux命令(9)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1703784.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试进阶知识系列 - 虚拟机相关(9)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1810496.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>测试终极技能之致富技能 - 养鸡(4)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1768306.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - Appium(10)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1870864.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - Docker(13)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/2034372.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - FastAPI(1)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1870905.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - Git 相关(5)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1993710.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - Java(1)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1753984.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - Jenkins(5)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1965248.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - Linux(7)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1981607.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - MongoDB(2)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1647420.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - Mysql(2)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1753647.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - Python(11)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1693898.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - Selenium(3)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1991121.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - 开发工具(2)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1844805.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>常见问题解决方案 - 杂七杂八(5)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1672662.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>读书笔记 -《52讲轻松搞定网络爬虫》(2)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/2061444.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>读书笔记 -《Effective Python》(1)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1672711.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>读书笔记 -《接口测试实战课》(1)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1672642.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>读书笔记 -《软件测试52讲》(9)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1629277.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>环境配置大杂烩 - Linux(13)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1672577.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>环境配置大杂烩 - Window(6)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1625646.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>软件评测师考试 - 必知必会系列(12)</a></li><li><a href="https://www.cnblogs.com/poloyy/category/1622251.html" class="category-item-link" rel="" target=""><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>思维导图系列(2)</a></li><li><a href="javascript:void(0)" onclick="sideColumnManager.loadMore(this)"><span class="iconfont icon-marketing_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>更多</a></li></ul></div></div> <div class="m-list-title"><span>文章分类<span class="iconfont icon-select m-list-title-select"></span></span> </div> <div class="m-icon-list" id="sb-ArticleCategory"></div> <div class="m-list-title" style="display: block;"><span>阅读排行<span class="iconfont icon-select m-list-title-select"></span></span> </div> <div class="m-icon-list" id="sb-topview"><div><ul><li><a href="https://www.cnblogs.com/poloyy/p/12207464.html"><span class="iconfont icon-browse_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Python - 判断一个字符串是否包含某个指定的字符串(47956)</a></li><li><a href="https://www.cnblogs.com/poloyy/p/12212868.html"><span class="iconfont icon-browse_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Linux - Shell 脚本中获取本机 ip 地址方法(40224)</a></li><li><a href="https://www.cnblogs.com/poloyy/p/15255670.html"><span class="iconfont icon-browse_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>比培训机构还详细的 Python 学习路线，你信吗 0^0(29215)</a></li><li><a href="https://www.cnblogs.com/poloyy/p/12571410.html"><span class="iconfont icon-browse_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Linux常用命令 - 五种创建文件命令详解(28550)</a></li><li><a href="https://www.cnblogs.com/poloyy/p/12641505.html"><span class="iconfont icon-browse_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Pytest系列（1） - 快速入门和基础讲解(21362)</a></li></ul></div></div> <div class="m-list-title" style="display: block;"><span>推荐排行<span class="iconfont icon-select m-list-title-select"></span></span> </div> <div class="m-icon-list" id="sb-topDiggPosts"><div><ul><li><a href="https://www.cnblogs.com/poloyy/p/15255670.html"><span class="iconfont icon-like_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>比培训机构还详细的 Python 学习路线，你信吗 0^0(65)</a></li><li><a href="https://www.cnblogs.com/poloyy/p/14593841.html"><span class="iconfont icon-like_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>阿里巴巴-工作自传（不断更新）(43)</a></li><li><a href="https://www.cnblogs.com/poloyy/p/12641505.html"><span class="iconfont icon-like_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>Pytest系列（1） - 快速入门和基础讲解(34)</a></li><li><a href="https://www.cnblogs.com/poloyy/p/12219145.html"><span class="iconfont icon-like_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>全网最详细！Centos7.X 搭建Grafana+Jmeter+Influxdb 性能实时监控平台(25)</a></li><li><a href="https://www.cnblogs.com/poloyy/p/15257064.html"><span class="iconfont icon-like_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>全全全栈测试开发学习路线(23)</a></li></ul></div></div> <div class="m-list-title"><span>最新评论<span class="iconfont icon-select m-list-title-select"></span></span> </div> <div class="m-icon-list" id="sb-recentComments"></div> <div class="m-list-title"><span>文章档案<span class="iconfont icon-select m-list-title-select"></span></span> </div> <div class="m-icon-list" id="sb-articlearchive"></div> <div class="m-list-title" style="display: block;"><span>随笔档案<span class="iconfont icon-select m-list-title-select"></span></span> </div> <div class="m-icon-list" id="sb-record"><div><ul><li><a href="https://www.cnblogs.com/poloyy/archive/2021/12.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2021年12月(1)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2021/11.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2021年11月(16)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2021/10.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2021年10月(59)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2021/09.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2021年9月(84)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2021/08.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2021年8月(47)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2021/07.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2021年7月(37)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2021/06.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2021年6月(27)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2021/05.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2021年5月(28)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2021/04.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2021年4月(13)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2021/03.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2021年3月(3)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2021/01.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2021年1月(1)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2020/12.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2020年12月(7)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2020/11.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2020年11月(86)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2020/10.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2020年10月(21)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2020/09.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2020年9月(24)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2020/08.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2020年8月(37)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2020/07.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2020年7月(73)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2020/06.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2020年6月(67)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2020/05.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2020年5月(115)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2020/04.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2020年4月(68)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2020/03.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2020年3月(67)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2020/02.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2020年2月(16)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2020/01.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2020年1月(63)</a></li><li><a href="https://www.cnblogs.com/poloyy/archive/2019/12.html" class="category-item-link" rel="" target=""><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>2019年12月(10)</a></li><li><a href="javascript:void(0)" onclick="sideColumnManager.loadMore(this)"><span class="iconfont icon-task_fill" style="color: #888;font-size: 14px;margin-right: 5px;"></span>更多</a></li></ul></div></div> </nav> <button class="close-button" id="close-button">Close Menu</button> <div class="morph-shape" id="morph-shape" data-morph-open="M-7.312,0H15c0,0,66,113.339,66,399.5C81,664.006,15,800,15,800H-7.312V0z;M-7.312,0H100c0,0,0,113.839,0,400c0,264.506,0,400,0,400H-7.312V0z"> <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 100 800" preserveAspectRatio="none"> <path d="M-7.312,0H0c0,0,0,113.839,0,400c0,264.506,0,400,0,400h-7.312V0z"></path> <desc>Created with Snap</desc><defs></defs></svg> </div> </div><div class="optiscroll-v"><b class="optiscroll-vtrack"></b></div><div class="optiscroll-h"><b class="optiscroll-htrack"></b></div></div> <button class="menu-button menu-button-scroll" id="open-button"></button> <div class="content-wrap" id="content-wrap"></div> </div>
+    <h3 class="catListTitle">公告</h3>
+<div id="blog-news"><div id="progressBar"><div id="top-progress-bar" style="position: relative; top: 0px; left: 0px; right: 0px; background-color: rgb(119, 182, 255); height: 2px; width: 93%; transition: width 0.2s ease 0s, opacity 0.6s ease 0s; opacity: 1;"></div></div><div id="rightMenu"> <div id="rtaDirectory" class="rightMenuItem" style=""> <span class="rightMenuSpan rtaDirectorySpan"> 文章目录 </span> <i banmv="" class="iconfont icon-mulu"></i> </div> <div id="rightMenuHome" class="rightMenuItem" style="" clickflg="true"> <span class="rightMenuSpan"> 访问主页 </span> <i class="iconfont icon-home"></i> </div> <span class="hideRightMenu"> <div id="rightDiggit" class="rightMenuItem" clickflg="false" style="" onclick="votePost(13363123,&#39;Digg&#39;)"> <span class="rightMenuSpan rightDiggitSpan">2</span> <i class="iconfont icon-zan1"></i> </div> <div id="rightBuryit" class="rightMenuItem" clickflg="false" style="" onclick="votePost(13363123,&#39;Bury&#39;)"> <span class="rightMenuSpan rightBuryitSpan">0</span> <i class="iconfont icon-buzan"></i> </div> <div id="rightDashang" class="rightMenuItem" clickflg="false" style=""> <span class="rightMenuSpan rightDanshanSpan"> <div class="ds-pay"> <div class="ds-alipay" style=""> <img \="" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/zhifu.bmp"> <span>Alipay</span> </div> <div class="ds-wecat" style=""> <img \="" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/weixin.bmp"> <span>WeChat</span> </div> </div> </span> <i class="iconfont icon-dashang2"></i> </div> <div id="rightGzh" class="rightMenuItem" clickflg="false" style="display:none"> <span class="rightMenuSpan rightGzhSpan"> <div class="ds-pay"> <div class="ds-gzh"> <img><span>qrCode</span> </div> </div> </span> <i class="iconfont icon-erweima4"></i> </div> <div id="attention" class="rightMenuItem" clickflg="false" onclick="follow(&#39;bfd58f0a-1e58-4ac0-e56e-08d77884eb28&#39;)"> <span class="rightMenuSpan attentionSpan">关注</span> <i class="iconfont icon-dianzan"></i> </div> </span> <div id="rightMenuSite" class="rightMenuItem" clickflg="true"> <span class="rightMenuSpan"> 点击开启 </span> <i banmv="" class="iconfont icon-shezhi3" style="transform: rotate(284deg); transform-origin: 50% 50%;"></i> </div> <div id="toUpDown" class="rightMenuItem" data="up"> <span class="rightMenuSpan toUpDownSpan">返回顶部</span> <div id="toUpDownI" style="transform: rotate(0deg); transform-origin: 50% 50%;"> <i banmv="" class="iconfont icon-zhiding"></i> </div> </div> </div><div id="loading" style="display: none;"></div>    
+    <div id="sidebar_news_content"><script type="text/javascript">window['__document_write_ajax_callbacks__']['4']();</script><script type="text/javascript">window['__document_write_ajax_callbacks__']['1']();</script>
+    <script type="text/javascript">window['__document_write_ajax_callbacks__']['5']();</script><script type="text/javascript">window['__document_write_ajax_callbacks__']['6']();</script><script defer="">window['__document_write_ajax_callbacks__']['2']();</script>
+<div id="profile_block">
+    昵称：
+    <a href="https://home.cnblogs.com/u/poloyy/">
+        小菠萝测试笔记
+    </a>
+    <br>
+    园龄：
+    <a href="https://home.cnblogs.com/u/poloyy/" title="入园时间：2019-12-12">
+        3年3个月
+    </a>
+    <br>
+    粉丝：
+    <a class="follower-count" href="https://home.cnblogs.com/u/poloyy/followers/">
+        3657
+    </a>
+    <br>
+    关注：
+    <a class="folowing-count" href="https://home.cnblogs.com/u/poloyy/followees/">
+        11
+    </a>
+    <div id="p_b_follow" class="follow-tip">
+<a href="javascript:void(0)" onclick="follow(&#39;bfd58f0a-1e58-4ac0-e56e-08d77884eb28&#39;)">+加关注</a></div>
+    <script type="text/javascript">window['__document_write_ajax_callbacks__']['7']();</script><script>window['__document_write_ajax_callbacks__']['3']();</script>
+</div>
+</div>
+</div>
+<script>loadBlogNews();</script>
+
+ 
+</div>
+<div id="sidebar_c3"></div>
+			<div id="blog-calendar" style="display:none"></div><script>loadBlogDefaultCalendar();</script>			
+			<div id="leftcontentcontainer">
+				<div id="blog-sidecolumn"><!-- 搜索 -->
+<div id="sidebar_search" class="sidebar-block">
+    <div id="sidebar_search" class="mySearch">
+        <h3 class="catListTitle">搜索</h3>
+        <div id="sidebar_search_box">
+            <div id="widget_my_zzk" class="div_my_zzk">
+                <input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk">
+            </div>
+            <div id="widget_my_google" class="div_my_zzk">
+                <input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 常用链接 -->
+<div id="sidebar_shortcut" class="sidebar-block"><div class="catListLink">
+<h3 class="catListTitle">
+常用链接
+</h3>
+<ul>
+    <li><a href="https://www.cnblogs.com/poloyy/p/" title="我的博客的随笔列表">我的随笔</a></li>
+<li><a href="https://www.cnblogs.com/poloyy/MyComments.html" title="我的发表过的评论列表">我的评论</a></li>
+<li><a href="https://www.cnblogs.com/poloyy/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li>
+<li><a href="https://www.cnblogs.com/poloyy/comments" title="我的博客的评论列表">最新评论</a></li>
+<li><a href="https://www.cnblogs.com/poloyy/tag/" title="我的博客的标签列表">我的标签</a></li>
+
+</ul>
+</div>
+
+</div>
+
+<!-- 最新随笔 -->
+<div id="sidebar_recentposts" class="sidebar-block"><div class="catListEssay">
+<h3 class="catListTitle">最新随笔</h3>
+    <ul>
+                <li>
+                    
+<a href="https://www.cnblogs.com/poloyy/p/15675593.html">1.重要通知！重要通知！不是广告！不是广告！</a>
+
+                </li>
+                <li>
+                    
+<a href="https://www.cnblogs.com/poloyy/p/15565916.html">2.crontab - 解决 mac 下通过 crontab 设置了 Python 脚本的定时任务却无法运行</a>
+
+                </li>
+                <li>
+                    
+<a href="https://www.cnblogs.com/poloyy/p/15565875.html">3.Python - 抓取 iphone13 pro 线下店供货信息并发送到钉钉机器人，最后设置为定时任务</a>
+
+                </li>
+                <li>
+                    
+<a href="https://www.cnblogs.com/poloyy/p/15565764.html">4.Python - 接入钉钉机器人</a>
+
+                </li>
+                <li>
+                    
+<a href="https://www.cnblogs.com/poloyy/p/15549664.html">5.Effective Python（3）- 了解 bytes 与 str 的区别</a>
+
+                </li>
+                <li>
+                    
+<a href="https://www.cnblogs.com/poloyy/p/15549557.html">6.Effective Python（2）- 遵循 PEP 8 风格指南</a>
+
+                </li>
+                <li>
+                    
+<a href="https://www.cnblogs.com/poloyy/p/15549542.html">7.Python - 好用第三方库 isort</a>
+
+                </li>
+                <li>
+                    
+<a href="https://www.cnblogs.com/poloyy/p/15549328.html">8.Effective Python（1）- 查询自己使用的Python版本</a>
+
+                </li>
+                <li>
+                    
+<a href="https://www.cnblogs.com/poloyy/p/15549275.html">9.fastapi（66）- 修改 uvicorn 的日志格式</a>
+
+                </li>
+                <li>
+                    
+<a href="https://www.cnblogs.com/poloyy/p/15549265.html">10.Python - logging.Formatter 的常用格式字符串</a>
+
+                </li>
+    </ul>
+</div>
+
+</div>
+
+<!-- 我的标签 -->
+<div id="sidebar_toptags" class="sidebar-block"><div class="catListTag">
+    <h3 class="catListTitle"><a href="https://www.cnblogs.com/poloyy/tag/" class="sidebar-card-title-a">我的标签</a></h3>
+<ul>
+        <li>
+            <a href="https://www.cnblogs.com/poloyy/tag/Python/">Python<span class="tag-count">(150)</span></a>
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poloyy/tag/Cypress/">Cypress<span class="tag-count">(103)</span></a>
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poloyy/tag/Jmeter/">Jmeter<span class="tag-count">(70)</span></a>
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poloyy/tag/Docker/">Docker<span class="tag-count">(68)</span></a>
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poloyy/tag/FastAPI/">FastAPI<span class="tag-count">(66)</span></a>
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poloyy/tag/Mysql%E5%B8%B8%E7%94%A8%E5%87%BD%E6%95%B0/">Mysql常用函数<span class="tag-count">(42)</span></a>
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poloyy/tag/Jmeter%20%E5%B8%B8%E7%94%A8%E5%87%BD%E6%95%B0/">Jmeter 常用函数<span class="tag-count">(33)</span></a>
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poloyy/tag/Pytest/">Pytest<span class="tag-count">(31)</span></a>
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poloyy/tag/Git/">Git<span class="tag-count">(29)</span></a>
+        </li>
+        <li>
+            <a href="https://www.cnblogs.com/poloyy/tag/Mysql%E5%B8%B8%E7%94%A8sql%E8%AF%AD%E5%8F%A5/">Mysql常用sql语句<span class="tag-count">(24)</span></a>
+        </li>
+    <li>
+        <a href="https://www.cnblogs.com/poloyy/tag/">更多</a>
+    </li>
+
+</ul>
+</div>
+
+</div>
+
+<!-- 积分与排名 -->
+<div id="sidebar_scorerank" class="sidebar-block"><div class="catListBlogRank">
+<h3 class="catListTitle">积分与排名</h3>
+<ul>
+	<li class="liScore">
+		积分 -	
+1775524
+	</li>
+	<li class="liRank">
+		排名 -	
+89
+	</li>
+</ul>
+</div>
+
+
+
+</div>
+
+<!-- 随笔分类、随笔档案、文章分类、新闻分类、相册、链接 -->
+<div id="sidebar_categories">
+
+    <div id="sidebar_postcategory" class="catListPostCategory sidebar-block">
+        <h3 class="catListTitle">
+            
+    <a class="sidebar-card-title-a" href="https://www.cnblogs.com/poloyy/post-categories">随笔分类</a>
+<span class="sidebar-category-item-count">
+    (981)
+</span>
+
+
+        </h3>
+
+        <ul>
+
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1672461.html" class="category-item-link" rel="" target="">Grafana搭建性能监控平台系列(2)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1628980.html" class="category-item-link" rel="" target="">测试必备软技能 -  提升工作效率(2)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1672475.html" class="category-item-link" rel="" target="">测试必知必会系列 - Git(29)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1672457.html" class="category-item-link" rel="" target="">测试必知必会系列 - Linux命令(25)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/2061142.html" class="category-item-link" rel="" target="">测试必知必会系列 - Mysql(4)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1765164.html" class="category-item-link" rel="" target="">测试必知必会系列 - Mysql常用函数(42)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1683347.html" class="category-item-link" rel="" target="">测试必知必会系列 - Mysql常用语句(27)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1629615.html" class="category-item-link" rel="" target="">测试必知必会系列 - 操作系统(1)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1620793.html" class="category-item-link" rel="" target="">测试必知必会系列 - 测试基础知识(13)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1625535.html" class="category-item-link" rel="" target="">测试必知必会系列 - 计算机网络(11)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1629214.html" class="category-item-link" rel="" target="">测试必知必会系列 - 前端基础知识(2)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1796055.html" class="category-item-link" rel="" target="">测试必知必会系列 - 正则表达式(9)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1620794.html" class="category-item-link" rel="" target="">测试必知必会系列 - 抓包工具(3)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1672557.html" class="category-item-link" rel="" target="">测试必知必会系列 - 自动化测试工具(1)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1966428.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - Ansible(1)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1693896.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - Appium(15)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1768839.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - Cypress(103)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1870863.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - Docker(66)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1998250.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - FastAPI(66)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1998249.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - Flask(12)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1623190.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - Java基础(7)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1645399.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - Jenkins、CI/CD(13)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1746599.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - Jmeter(69)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1805867.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - Jmeter常用函数(32)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1981545.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - MongoDB(15)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1690628.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - Pytest(31)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1770899.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - Robot Framework(15)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1986240.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - wrk(2)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1954356.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - 算法(2)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1620792.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - 性能测试(5)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1806772.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - 性能测试必备知识(11)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1814570.html" class="category-item-link" rel="" target="">测试高级进阶技能系列 - 性能分析(7)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1876953.html" class="category-item-link" rel="" target="">测试进阶知识系列 - adb、Monkey(7)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1678719.html" class="category-item-link" rel="" target="">测试进阶知识系列 - Linux进阶知识(7)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1629158.html" class="category-item-link" rel="" target="">测试进阶知识系列 - Python (137)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1680176.html" class="category-item-link" rel="" target="">测试进阶知识系列 - Python+Selenium系列(17)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1676599.html" class="category-item-link" rel="" target="">测试进阶知识系列 - Python基础习题集(17)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1632492.html" class="category-item-link" rel="" target="">测试进阶知识系列 - Python接口自动化系列(10)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1620791.html" class="category-item-link" rel="" target="">测试进阶知识系列 - 安全测试(4)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1620795.html" class="category-item-link" rel="" target="">测试进阶知识系列 - 接口测试(2)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1665013.html" class="category-item-link" rel="" target="">测试进阶知识系列 - 数据结构(2)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1819490.html" class="category-item-link" rel="" target="">测试进阶知识系列 - 性能测试必备的 Linux命令(9)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1703784.html" class="category-item-link" rel="" target="">测试进阶知识系列 - 虚拟机相关(9)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1810496.html" class="category-item-link" rel="" target="">测试终极技能之致富技能 - 养鸡(4)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1768306.html" class="category-item-link" rel="" target="">常见问题解决方案 - Appium(10)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1870864.html" class="category-item-link" rel="" target="">常见问题解决方案 - Docker(13)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/2034372.html" class="category-item-link" rel="" target="">常见问题解决方案 - FastAPI(1)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1870905.html" class="category-item-link" rel="" target="">常见问题解决方案 - Git 相关(5)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1993710.html" class="category-item-link" rel="" target="">常见问题解决方案 - Java(1)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1753984.html" class="category-item-link" rel="" target="">常见问题解决方案 - Jenkins(5)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1965248.html" class="category-item-link" rel="" target="">常见问题解决方案 - Linux(7)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1981607.html" class="category-item-link" rel="" target="">常见问题解决方案 - MongoDB(2)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1647420.html" class="category-item-link" rel="" target="">常见问题解决方案 - Mysql(2)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1753647.html" class="category-item-link" rel="" target="">常见问题解决方案 - Python(11)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1693898.html" class="category-item-link" rel="" target="">常见问题解决方案 - Selenium(3)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1991121.html" class="category-item-link" rel="" target="">常见问题解决方案 - 开发工具(2)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1844805.html" class="category-item-link" rel="" target="">常见问题解决方案 - 杂七杂八(5)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1672662.html" class="category-item-link" rel="" target="">读书笔记 -《52讲轻松搞定网络爬虫》(2)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/2061444.html" class="category-item-link" rel="" target="">读书笔记 -《Effective Python》(1)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1672711.html" class="category-item-link" rel="" target="">读书笔记 -《接口测试实战课》(1)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1672642.html" class="category-item-link" rel="" target="">读书笔记 -《软件测试52讲》(9)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1629277.html" class="category-item-link" rel="" target="">环境配置大杂烩 - Linux(13)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1672577.html" class="category-item-link" rel="" target="">环境配置大杂烩 - Window(6)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1625646.html" class="category-item-link" rel="" target="">软件评测师考试 - 必知必会系列(12)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/category/1622251.html" class="category-item-link" rel="" target="">思维导图系列(2)</a>
+ 
+                </li>                
+            <li>
+                <a href="javascript:void(0)" onclick="sideColumnManager.loadMore(this)">更多</a>
+            </li>
+        </ul>
+
+
+    </div>    
+    <div id="sidebar_postarchive" class="catListPostArchive sidebar-block">
+        <h3 class="catListTitle">
+            
+随笔档案<span class="sidebar-category-item-count">
+    (970)
+</span>
+
+
+        </h3>
+
+        <ul>
+
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2021/12.html" class="category-item-link" rel="" target="">2021年12月(1)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2021/11.html" class="category-item-link" rel="" target="">2021年11月(16)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2021/10.html" class="category-item-link" rel="" target="">2021年10月(59)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2021/09.html" class="category-item-link" rel="" target="">2021年9月(84)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2021/08.html" class="category-item-link" rel="" target="">2021年8月(47)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2021/07.html" class="category-item-link" rel="" target="">2021年7月(37)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2021/06.html" class="category-item-link" rel="" target="">2021年6月(27)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2021/05.html" class="category-item-link" rel="" target="">2021年5月(28)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2021/04.html" class="category-item-link" rel="" target="">2021年4月(13)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2021/03.html" class="category-item-link" rel="" target="">2021年3月(3)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2021/01.html" class="category-item-link" rel="" target="">2021年1月(1)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2020/12.html" class="category-item-link" rel="" target="">2020年12月(7)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2020/11.html" class="category-item-link" rel="" target="">2020年11月(86)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2020/10.html" class="category-item-link" rel="" target="">2020年10月(21)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="true" style="display: block">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2020/09.html" class="category-item-link" rel="" target="">2020年9月(24)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2020/08.html" class="category-item-link" rel="" target="">2020年8月(37)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2020/07.html" class="category-item-link" rel="" target="">2020年7月(73)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2020/06.html" class="category-item-link" rel="" target="">2020年6月(67)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2020/05.html" class="category-item-link" rel="" target="">2020年5月(115)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2020/04.html" class="category-item-link" rel="" target="">2020年4月(68)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2020/03.html" class="category-item-link" rel="" target="">2020年3月(67)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2020/02.html" class="category-item-link" rel="" target="">2020年2月(16)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2020/01.html" class="category-item-link" rel="" target="">2020年1月(63)</a>
+ 
+                </li>                
+                <li data-category-list-item-visible="false" style="display: none">
+                    
+<a href="https://www.cnblogs.com/poloyy/archive/2019/12.html" class="category-item-link" rel="" target="">2019年12月(10)</a>
+ 
+                </li>                
+            <li>
+                <a href="javascript:void(0)" onclick="sideColumnManager.loadMore(this)">更多</a>
+            </li>
+        </ul>
+
+
+    </div>    
+</div>
+
+<!-- 最新评论 -->
+
+
+
+<!-- 阅读排行榜 -->
+<div id="sidebar_topviewedposts" class="sidebar-block"><div class="catListView">
+    <h3 class="catListTitle">
+        <a href="https://www.cnblogs.com/poloyy/most-viewed" class="sidebar-card-title-a">
+    阅读排行榜
+</a>
+
+    </h3>
+    <div id="TopViewPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/poloyy/p/12207464.html">
+                            1. Python - 判断一个字符串是否包含某个指定的字符串(47956)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poloyy/p/12212868.html">
+                            2. Linux - Shell 脚本中获取本机 ip 地址方法(40224)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poloyy/p/15255670.html">
+                            3. 比培训机构还详细的 Python 学习路线，你信吗 0^0(29215)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poloyy/p/12571410.html">
+                            4. Linux常用命令 - 五种创建文件命令详解(28550)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poloyy/p/12641505.html">
+                            5. Pytest系列（1） - 快速入门和基础讲解(21362)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div></div>
+
+<!-- 评论排行榜 -->
+<div id="sidebar_topcommentedposts" class="sidebar-block"><div class="catListFeedback">
+    <h3 class="catListTitle">
+        <a href="https://www.cnblogs.com/poloyy/most-commented" class="sidebar-card-title-a">评论排行榜</a>
+
+    </h3>
+    <div id="TopFeedbackPostsBlock">
+        <ul style="word-break:break-all">
+                    <li>
+                        <a href="https://www.cnblogs.com/poloyy/p/14593841.html">
+                            1. 阿里巴巴-工作自传（不断更新）(48)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poloyy/p/15255670.html">
+                            2. 比培训机构还详细的 Python 学习路线，你信吗 0^0(32)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poloyy/p/13954637.html">
+                            3. Docker 实战（1）- 使用 Jenkins 镜像创建容器，并搭建 Python + Pytest +Allure 的自动化测试环境(23)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poloyy/p/12642602.html">
+                            4. Pytest系列（4） - fixture的详细使用(21)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.cnblogs.com/poloyy/p/12219145.html">
+                            5. 全网最详细！Centos7.X 搭建Grafana+Jmeter+Influxdb 性能实时监控平台(21)
+                        </a>
+                    </li>
+        </ul>
+    </div>
+</div></div>
+
+<!-- 推荐排行榜 -->
+<div id="sidebar_topdiggedposts" class="sidebar-block">
+<div id="topdigg_posts_wrap">
+    <div class="catListView">
+        <h3 class="catListTitle">
+            <a href="https://www.cnblogs.com/poloyy/most-liked" class="sidebar-card-title-a">推荐排行榜</a>
+
+        </h3>
+        <div id="TopDiggPostsBlock">
+            <ul style="word-break: break-all">
+                        <li>
+                            <a href="https://www.cnblogs.com/poloyy/p/15255670.html">
+                                1. 比培训机构还详细的 Python 学习路线，你信吗 0^0(65)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/poloyy/p/14593841.html">
+                                2. 阿里巴巴-工作自传（不断更新）(43)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/poloyy/p/12641505.html">
+                                3. Pytest系列（1） - 快速入门和基础讲解(34)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/poloyy/p/12219145.html">
+                                4. 全网最详细！Centos7.X 搭建Grafana+Jmeter+Influxdb 性能实时监控平台(25)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.cnblogs.com/poloyy/p/15257064.html">
+                                5. 全全全栈测试开发学习路线(23)
+                            </a>
+                        </li>
+            </ul>
+        </div>
+    </div>
+</div></div></div>
+                    <script>loadBlogSideColumn();</script>
+			</div>			
+		</div><!--end: sideBarMain -->
+	</div><!--end: sideBar 侧边栏容器 -->
+	<div class="clear"></div>
+	<div class="back-to-top cd-top faa-float animated cd-is-visible" style="top: -200px;"></div></div><!--end: main -->
+	<div class="clear"></div>
+	<div id="footer"> <div class="footer-image" id="footerStyle1" style="display:none"></div> <footer id="footerStyle2" style=""> <footer-background> <figure class="clouds" style="background: url(&quot;https://cdn.cnblogs.com/gh/BNDong/Cnblogs-Theme-SimpleMemory@v2.0.7/dist/images/0ff63a3006d8a2821be2.webp&quot;) repeat-x;"></figure> <figure class="background" style="background: url(&quot;https://cdn.cnblogs.com/gh/BNDong/Cnblogs-Theme-SimpleMemory@v2.0.7/dist/images/af2701cbb4196bedb254.webp&quot;) repeat-x;"></figure> <figure class="foreground" style="background: url(&quot;https://cdn.cnblogs.com/gh/BNDong/Cnblogs-Theme-SimpleMemory@v2.0.7/dist/images/30b4f3f93333bef2cf56.webp&quot;) repeat-x;"></figure> </footer-background> </footer> <div class="footer-box"> <div class="footer-text" style="display: block; padding-bottom: 0px; border-bottom: none; margin-bottom: 0px;"> [ 好好学习 <span class="footer-text-icon"> <span class="iconfont icon-xl" style="color:red;font-size:16px"></span> </span> 天天向上 ] </div> <div> <span id="blogRunTimeSpan">This blog has running : 1186 d 7 h 2 m 28 s</span> <span class="my-face">ღゝ◡╹)ノ♡</span> </div> <div id="linksHtml" style="display:block">友情链接：<a href="https://www.cnblogs.com/LyShark/" target="_blank">lyshark blog</a><span style="margin: 0 3px;">/</span><a href="https://msg.cnblogs.com/send/BNDong" target="_blank">申请坑位</a><span style="margin: 0 3px;">/</span><a href="https://msg.cnblogs.com/send/BNDong" target="_blank">申请坑位</a></div> <div id="cnzzInfo" style="display:none"> <div id="cnzzProtocol" style="display:none"> <span class="id_cnzz_stat_icon" id="cnzz_stat_icon_1280075573"></span> <script src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/z_stat.php"></script> </div> ##cnzzHtml## </div> <div>
+		
+Copyright © 2023 小菠萝测试笔记
+Powered by .NET 7.0 on Kubernetes
+
+
+
+	</div> </div></div><!--end: footer -->
+</div><!--end: home 自定义的最大容器 -->
+
+
+
+    <div id="page_end_html">
+        
+
+<!-- 音乐播放器 -->
+<link rel="stylesheet" href="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/APlayer.min.css">
+<script src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/APlayer.min.js.下载"></script>
+<!-- require MetingJS -->
+<script src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/Meting.min.js.下载"></script>
+<meting-js id="329641066" lrc-type="0" server="netease" order="random" type="playlist" fixed="true" list-olded="true">
+<div class="aplayer aplayer-withlist aplayer-fixed aplayer-narrow">
+<div class="aplayer-list aplayer-list-hide" style="max-height: 250px">
+    <ol style="max-height: 250px">
+        
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">1</span>
+    <span class="aplayer-list-title">北风北</span>
+    <span class="aplayer-list-author">谭联耀</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">2</span>
+    <span class="aplayer-list-title">马</span>
+    <span class="aplayer-list-author">福禄寿FloruitShow</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">3</span>
+    <span class="aplayer-list-title">优美的低于生活</span>
+    <span class="aplayer-list-author">声音碎片乐队</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">4</span>
+    <span class="aplayer-list-title">你过得好吗</span>
+    <span class="aplayer-list-author">刘大拿</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">5</span>
+    <span class="aplayer-list-title">王招君</span>
+    <span class="aplayer-list-author">任素汐</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">6</span>
+    <span class="aplayer-list-title">玻璃墙</span>
+    <span class="aplayer-list-author">CC斑马</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">7</span>
+    <span class="aplayer-list-title">暗河</span>
+    <span class="aplayer-list-author">冯佳界</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">8</span>
+    <span class="aplayer-list-title">假装 (吉他版)</span>
+    <span class="aplayer-list-author">刘大壮</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">9</span>
+    <span class="aplayer-list-title">漠河舞厅</span>
+    <span class="aplayer-list-author">柳爽</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">10</span>
+    <span class="aplayer-list-title">湘雨谣</span>
+    <span class="aplayer-list-author">音符姑娘</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">11</span>
+    <span class="aplayer-list-title">牡丹亭外</span>
+    <span class="aplayer-list-author">苏思蓉</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">12</span>
+    <span class="aplayer-list-title">登德多杰</span>
+    <span class="aplayer-list-author">西藏病人</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">13</span>
+    <span class="aplayer-list-title">会不会（吉他版）</span>
+    <span class="aplayer-list-author">刘大壮</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">14</span>
+    <span class="aplayer-list-title">泸沽湖</span>
+    <span class="aplayer-list-author">麻园诗人</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">15</span>
+    <span class="aplayer-list-title">丹歌惊鸿（动画《一人之下2》片尾曲王也角色歌）</span>
+    <span class="aplayer-list-author">坡上村</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">16</span>
+    <span class="aplayer-list-title">那时的我们</span>
+    <span class="aplayer-list-author">陈硕子</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">17</span>
+    <span class="aplayer-list-title">我愿</span>
+    <span class="aplayer-list-author">阿虾</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">18</span>
+    <span class="aplayer-list-title">情难枕</span>
+    <span class="aplayer-list-author">阿虾</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">19</span>
+    <span class="aplayer-list-title">情深缘浅</span>
+    <span class="aplayer-list-author">邵帅</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">20</span>
+    <span class="aplayer-list-title">芳华</span>
+    <span class="aplayer-list-author">柏松</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">21</span>
+    <span class="aplayer-list-title">胭脂粉</span>
+    <span class="aplayer-list-author">周末</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">22</span>
+    <span class="aplayer-list-title">留君遥</span>
+    <span class="aplayer-list-author">毕然</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">23</span>
+    <span class="aplayer-list-title">围围恩(demo)</span>
+    <span class="aplayer-list-author">风子</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">24</span>
+    <span class="aplayer-list-title">盛夏</span>
+    <span class="aplayer-list-author">毛不易</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">25</span>
+    <span class="aplayer-list-title">谈恋爱</span>
+    <span class="aplayer-list-author">张尕怂</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">26</span>
+    <span class="aplayer-list-title">鹤壁东</span>
+    <span class="aplayer-list-author">韩蒴</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">27</span>
+    <span class="aplayer-list-title">爱江山更爱美人</span>
+    <span class="aplayer-list-author">阿虾</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">28</span>
+    <span class="aplayer-list-title">去见你</span>
+    <span class="aplayer-list-author">徐秉龙</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">29</span>
+    <span class="aplayer-list-title">京途</span>
+    <span class="aplayer-list-author">阿虾</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">30</span>
+    <span class="aplayer-list-title">晚安。demo</span>
+    <span class="aplayer-list-author">奥博</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">31</span>
+    <span class="aplayer-list-title">你</span>
+    <span class="aplayer-list-author">蘇山海</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">32</span>
+    <span class="aplayer-list-title">给你给我</span>
+    <span class="aplayer-list-author">毛不易</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">33</span>
+    <span class="aplayer-list-title">农夫渔夫</span>
+    <span class="aplayer-list-author">大乔小乔</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">34</span>
+    <span class="aplayer-list-title">世间美好与你环环相扣</span>
+    <span class="aplayer-list-author">柏松</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">35</span>
+    <span class="aplayer-list-title">春夏秋冬的你</span>
+    <span class="aplayer-list-author">王宇良</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">36</span>
+    <span class="aplayer-list-title">其实我想说的还有很多</span>
+    <span class="aplayer-list-author">前男友</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">37</span>
+    <span class="aplayer-list-title">她在睡梦中</span>
+    <span class="aplayer-list-author">朴树</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">38</span>
+    <span class="aplayer-list-title">暗恋是一个人的事</span>
+    <span class="aplayer-list-author">宿羽阳</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">39</span>
+    <span class="aplayer-list-title">未梦及半</span>
+    <span class="aplayer-list-author">程佳乐</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">40</span>
+    <span class="aplayer-list-title">我想独自忍受痛苦 也想别人给我幸福</span>
+    <span class="aplayer-list-author">姜铭杨</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">41</span>
+    <span class="aplayer-list-title">不待</span>
+    <span class="aplayer-list-author">忱忱老板</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">42</span>
+    <span class="aplayer-list-title">相守</span>
+    <span class="aplayer-list-author">栗先达</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">43</span>
+    <span class="aplayer-list-title">一次旅行</span>
+    <span class="aplayer-list-author">子炮枪80</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">44</span>
+    <span class="aplayer-list-title">土掌房</span>
+    <span class="aplayer-list-author">暗杠</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">45</span>
+    <span class="aplayer-list-title">一生独一</span>
+    <span class="aplayer-list-author">卢焱</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">46</span>
+    <span class="aplayer-list-title">你的姑娘</span>
+    <span class="aplayer-list-author">隔壁老樊</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">47</span>
+    <span class="aplayer-list-title">关于孤独我想说的话 </span>
+    <span class="aplayer-list-author">隔壁老樊</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">48</span>
+    <span class="aplayer-list-title">走歌人</span>
+    <span class="aplayer-list-author">暗杠</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">49</span>
+    <span class="aplayer-list-title">晚睡的姑娘</span>
+    <span class="aplayer-list-author">周新诚</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">50</span>
+    <span class="aplayer-list-title">十七</span>
+    <span class="aplayer-list-author">马融</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">51</span>
+    <span class="aplayer-list-title">遥远的你 (正式版)</span>
+    <span class="aplayer-list-author">221小伙伴</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">52</span>
+    <span class="aplayer-list-title">写给黄淮（demo）</span>
+    <span class="aplayer-list-author">邵帅</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">53</span>
+    <span class="aplayer-list-title">南风北巷（demo）</span>
+    <span class="aplayer-list-author">邵帅</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">54</span>
+    <span class="aplayer-list-title">浮生</span>
+    <span class="aplayer-list-author">刘莱斯</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">55</span>
+    <span class="aplayer-list-title">繁华之处</span>
+    <span class="aplayer-list-author">栗先达</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">56</span>
+    <span class="aplayer-list-title">我早已不写诗了（Demo）</span>
+    <span class="aplayer-list-author">茶不倒</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">57</span>
+    <span class="aplayer-list-title">关于南方破碎的理想</span>
+    <span class="aplayer-list-author">老四叔</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">58</span>
+    <span class="aplayer-list-title">世间</span>
+    <span class="aplayer-list-author">王宇良</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">59</span>
+    <span class="aplayer-list-title">北楼</span>
+    <span class="aplayer-list-author">陈柏霖</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">60</span>
+    <span class="aplayer-list-title">春秋</span>
+    <span class="aplayer-list-author">张晨飞</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">61</span>
+    <span class="aplayer-list-title">那个女孩的家在陕西的最北边</span>
+    <span class="aplayer-list-author">范旭东</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">62</span>
+    <span class="aplayer-list-title">民谣在路上</span>
+    <span class="aplayer-list-author">前冲</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">63</span>
+    <span class="aplayer-list-title">椿</span>
+    <span class="aplayer-list-author">沈以诚</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">64</span>
+    <span class="aplayer-list-title">莫妮卡</span>
+    <span class="aplayer-list-author">柳爽</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">65</span>
+    <span class="aplayer-list-title">盼兮</span>
+    <span class="aplayer-list-author">翁大涵</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">66</span>
+    <span class="aplayer-list-title">嫁给我 (民谣版)</span>
+    <span class="aplayer-list-author">不可撤销</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">67</span>
+    <span class="aplayer-list-title">探清水河</span>
+    <span class="aplayer-list-author">晓月老板</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">68</span>
+    <span class="aplayer-list-title">朵</span>
+    <span class="aplayer-list-author">赵雷</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">69</span>
+    <span class="aplayer-list-title">不及</span>
+    <span class="aplayer-list-author">郭斯</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">70</span>
+    <span class="aplayer-list-title">樱花(现场吉他版）</span>
+    <span class="aplayer-list-author">茶季杨</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">71</span>
+    <span class="aplayer-list-title">上过白塔山的恋人都会分手</span>
+    <span class="aplayer-list-author">白亮</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">72</span>
+    <span class="aplayer-list-title">醒着醉</span>
+    <span class="aplayer-list-author">马良</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">73</span>
+    <span class="aplayer-list-title">一梦浮生</span>
+    <span class="aplayer-list-author">刘明汉</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">74</span>
+    <span class="aplayer-list-title">窗外花开</span>
+    <span class="aplayer-list-author">李晋</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">75</span>
+    <span class="aplayer-list-title">余生无你（DEMO）</span>
+    <span class="aplayer-list-author">马喆</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">76</span>
+    <span class="aplayer-list-title">扬州</span>
+    <span class="aplayer-list-author">李晋</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">77</span>
+    <span class="aplayer-list-title">马尾姑娘</span>
+    <span class="aplayer-list-author">姜斌斌</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">78</span>
+    <span class="aplayer-list-title">云烟成雨</span>
+    <span class="aplayer-list-author">房东的猫</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">79</span>
+    <span class="aplayer-list-title">往后余生</span>
+    <span class="aplayer-list-author">马良</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">80</span>
+    <span class="aplayer-list-title">孙大剩</span>
+    <span class="aplayer-list-author">白亮 / 赵静</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">81</span>
+    <span class="aplayer-list-title">关于兰州</span>
+    <span class="aplayer-list-author">秦洋</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">82</span>
+    <span class="aplayer-list-title">你好，兰州</span>
+    <span class="aplayer-list-author">小金先生</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">83</span>
+    <span class="aplayer-list-title">太阳照耀着（Demo）</span>
+    <span class="aplayer-list-author">茶不倒</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">84</span>
+    <span class="aplayer-list-title">白羊</span>
+    <span class="aplayer-list-author">徐秉龙 / 沈以诚</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">85</span>
+    <span class="aplayer-list-title">镜湖难泛舟(Demo)</span>
+    <span class="aplayer-list-author">张典</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">86</span>
+    <span class="aplayer-list-title">万水</span>
+    <span class="aplayer-list-author">李雨</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">87</span>
+    <span class="aplayer-list-title">提起笔想写下一些你的片段</span>
+    <span class="aplayer-list-author">郭旭</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">88</span>
+    <span class="aplayer-list-title">不知归期的故人</span>
+    <span class="aplayer-list-author">房东的猫</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">89</span>
+    <span class="aplayer-list-title">揪心的玩笑与漫长的白日梦</span>
+    <span class="aplayer-list-author">万能青年旅店</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">90</span>
+    <span class="aplayer-list-title">十二（Cover 留声玩具）</span>
+    <span class="aplayer-list-author">安白</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">91</span>
+    <span class="aplayer-list-title">谁（Cover 廖俊涛）</span>
+    <span class="aplayer-list-author">黑呢</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">92</span>
+    <span class="aplayer-list-title">十六岁的她与十七岁的你</span>
+    <span class="aplayer-list-author">绫月汐</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">93</span>
+    <span class="aplayer-list-title">声声慢</span>
+    <span class="aplayer-list-author">崔开潮</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">94</span>
+    <span class="aplayer-list-title">窗外雨</span>
+    <span class="aplayer-list-author">张三弥</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">95</span>
+    <span class="aplayer-list-title">苏四&nbsp;demo</span>
+    <span class="aplayer-list-author">李雨</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">96</span>
+    <span class="aplayer-list-title">马戏团里的疯女人</span>
+    <span class="aplayer-list-author">雷梅苔丝</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">97</span>
+    <span class="aplayer-list-title">原始人的情话（demo）</span>
+    <span class="aplayer-list-author">赵美丽</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">98</span>
+    <span class="aplayer-list-title">只道寻常</span>
+    <span class="aplayer-list-author">谢春花</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">99</span>
+    <span class="aplayer-list-title">太平洋西岸的歌(demo)</span>
+    <span class="aplayer-list-author">风子</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">100</span>
+    <span class="aplayer-list-title">亲爱的，你的棉裤真的不在我家</span>
+    <span class="aplayer-list-author">齐一</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">101</span>
+    <span class="aplayer-list-title">如故</span>
+    <span class="aplayer-list-author">七修远</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">102</span>
+    <span class="aplayer-list-title">一人</span>
+    <span class="aplayer-list-author">七修远</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">103</span>
+    <span class="aplayer-list-title">冬天的叶子</span>
+    <span class="aplayer-list-author">翟小树</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">104</span>
+    <span class="aplayer-list-title">再见&nbsp;某人</span>
+    <span class="aplayer-list-author">李知蹊</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">105</span>
+    <span class="aplayer-list-title">留香</span>
+    <span class="aplayer-list-author">杨庆鸿</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">106</span>
+    <span class="aplayer-list-title">旧词</span>
+    <span class="aplayer-list-author">愚青</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">107</span>
+    <span class="aplayer-list-title">至此流年各天涯</span>
+    <span class="aplayer-list-author">我不理智</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">108</span>
+    <span class="aplayer-list-title">十月迷城</span>
+    <span class="aplayer-list-author">李晋</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">109</span>
+    <span class="aplayer-list-title">情人劫</span>
+    <span class="aplayer-list-author">老狼</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">110</span>
+    <span class="aplayer-list-title">达摩流浪者</span>
+    <span class="aplayer-list-author">万晓利</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">111</span>
+    <span class="aplayer-list-title">远方的姑娘我想念你 你可知道（爱尔兰画眉）</span>
+    <span class="aplayer-list-author">秋野</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">112</span>
+    <span class="aplayer-list-title">一生所爱&nbsp;（Cover&nbsp;卢冠廷）</span>
+    <span class="aplayer-list-author">暗杠</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">113</span>
+    <span class="aplayer-list-title">嘿，抬头！</span>
+    <span class="aplayer-list-author">贰佰</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">114</span>
+    <span class="aplayer-list-title">致自己</span>
+    <span class="aplayer-list-author">齐一</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">115</span>
+    <span class="aplayer-list-title">短叹</span>
+    <span class="aplayer-list-author">房东的猫 / 梁晓雪</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">116</span>
+    <span class="aplayer-list-title">小樱</span>
+    <span class="aplayer-list-author">饭碗的彼岸</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">117</span>
+    <span class="aplayer-list-title">我是一个任性的孩子（摘自顾城长诗）</span>
+    <span class="aplayer-list-author">侯康</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">118</span>
+    <span class="aplayer-list-title">怎么办</span>
+    <span class="aplayer-list-author">蒋山</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">119</span>
+    <span class="aplayer-list-title">九月(海子)</span>
+    <span class="aplayer-list-author">周云蓬</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">120</span>
+    <span class="aplayer-list-title">坐在海豚阿德对面</span>
+    <span class="aplayer-list-author">英伦盒子</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">121</span>
+    <span class="aplayer-list-title">认真地老去</span>
+    <span class="aplayer-list-author">张希 / 曹方</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">122</span>
+    <span class="aplayer-list-title">想把我唱给你听</span>
+    <span class="aplayer-list-author">老狼 / 王婧</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">123</span>
+    <span class="aplayer-list-title">逝年</span>
+    <span class="aplayer-list-author">夏小虎</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">124</span>
+    <span class="aplayer-list-title">八月十五</span>
+    <span class="aplayer-list-author">房东的猫</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">125</span>
+    <span class="aplayer-list-title">樱花东街</span>
+    <span class="aplayer-list-author">王华峰</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">126</span>
+    <span class="aplayer-list-title">别送我</span>
+    <span class="aplayer-list-author">陈鸿宇 / 苏紫旭 / 刘昊霖 / 寒洛&amp;鼓润</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">127</span>
+    <span class="aplayer-list-title">阿楚姑娘</span>
+    <span class="aplayer-list-author">梁凡</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">128</span>
+    <span class="aplayer-list-title">你好无锡</span>
+    <span class="aplayer-list-author">严老板</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">129</span>
+    <span class="aplayer-list-title">一如年少模样</span>
+    <span class="aplayer-list-author">陈鸿宇</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">130</span>
+    <span class="aplayer-list-title">米店</span>
+    <span class="aplayer-list-author">赵雷</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">131</span>
+    <span class="aplayer-list-title">骏马谣</span>
+    <span class="aplayer-list-author">王喂马</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">132</span>
+    <span class="aplayer-list-title">白兰鸽巡游记</span>
+    <span class="aplayer-list-author">丢火车</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">133</span>
+    <span class="aplayer-list-title">蜜蜂 demo</span>
+    <span class="aplayer-list-author">万玲琳</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">134</span>
+    <span class="aplayer-list-title">萨琳娜</span>
+    <span class="aplayer-list-author">张尧</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">135</span>
+    <span class="aplayer-list-title">佳妮</span>
+    <span class="aplayer-list-author">奥博</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">136</span>
+    <span class="aplayer-list-title">十二（Cover 留声玩具）</span>
+    <span class="aplayer-list-author">「么凹」</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">137</span>
+    <span class="aplayer-list-title">儿时</span>
+    <span class="aplayer-list-author">刘昊霖</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">138</span>
+    <span class="aplayer-list-title">无能为力</span>
+    <span class="aplayer-list-author">纣王老胡</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">139</span>
+    <span class="aplayer-list-title">阿婆说</span>
+    <span class="aplayer-list-author">暗杠</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">140</span>
+    <span class="aplayer-list-title">就在不远的2013年</span>
+    <span class="aplayer-list-author">宋冬野</span>
+</li>
+
+<li class="aplayer-list-light">
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">141</span>
+    <span class="aplayer-list-title">宝贝 我不再是穿着花裙的小傻X</span>
+    <span class="aplayer-list-author">莫倪moni</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">142</span>
+    <span class="aplayer-list-title">木头的心</span>
+    <span class="aplayer-list-author">左颜</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">143</span>
+    <span class="aplayer-list-title">那年梦中</span>
+    <span class="aplayer-list-author">玥霖Gabrielle</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">144</span>
+    <span class="aplayer-list-title">Don't Break My Heart</span>
+    <span class="aplayer-list-author">黑豹乐队</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">145</span>
+    <span class="aplayer-list-title">阿拉善</span>
+    <span class="aplayer-list-author">贰佰</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">146</span>
+    <span class="aplayer-list-title">小雨日记-demo</span>
+    <span class="aplayer-list-author">崔跃文</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">147</span>
+    <span class="aplayer-list-title">旁观者</span>
+    <span class="aplayer-list-author">张晏铭</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">148</span>
+    <span class="aplayer-list-title">佳佳</span>
+    <span class="aplayer-list-author">张晏铭</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">149</span>
+    <span class="aplayer-list-title">美好事物</span>
+    <span class="aplayer-list-author">房东的猫</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">150</span>
+    <span class="aplayer-list-title">这么孤独着</span>
+    <span class="aplayer-list-author">张艺德</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">151</span>
+    <span class="aplayer-list-title">或许</span>
+    <span class="aplayer-list-author">尹吾</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">152</span>
+    <span class="aplayer-list-title">你笑着流出了泪</span>
+    <span class="aplayer-list-author">尹吾</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">153</span>
+    <span class="aplayer-list-title">陪我到可可西里去看海</span>
+    <span class="aplayer-list-author">大冰</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">154</span>
+    <span class="aplayer-list-title">我也不知为何流下了眼泪</span>
+    <span class="aplayer-list-author">Jam</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">155</span>
+    <span class="aplayer-list-title">爱你就像爱生命</span>
+    <span class="aplayer-list-author">房东的猫</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">156</span>
+    <span class="aplayer-list-title">未给姐姐递出的信</span>
+    <span class="aplayer-list-author">赵雷</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">157</span>
+    <span class="aplayer-list-title">再也不会去丽江</span>
+    <span class="aplayer-list-author">赵雷</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">158</span>
+    <span class="aplayer-list-title">关忆北</span>
+    <span class="aplayer-list-author">宋冬野</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">159</span>
+    <span class="aplayer-list-title">写给你的歌</span>
+    <span class="aplayer-list-author">刘明汉</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">160</span>
+    <span class="aplayer-list-title">暖怀</span>
+    <span class="aplayer-list-author">左颜</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">161</span>
+    <span class="aplayer-list-title">无画</span>
+    <span class="aplayer-list-author">小娟&amp;山谷里的居民</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">162</span>
+    <span class="aplayer-list-title">往往</span>
+    <span class="aplayer-list-author">房东的猫</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">163</span>
+    <span class="aplayer-list-title">给那个创业的一把吉他（demo）</span>
+    <span class="aplayer-list-author">奥博</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">164</span>
+    <span class="aplayer-list-title">蜜蜂（live版）</span>
+    <span class="aplayer-list-author">奥博</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">165</span>
+    <span class="aplayer-list-title">不找了</span>
+    <span class="aplayer-list-author">郭旭</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">166</span>
+    <span class="aplayer-list-title">人生</span>
+    <span class="aplayer-list-author">夏小虎</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">167</span>
+    <span class="aplayer-list-title">南方北方</span>
+    <span class="aplayer-list-author">小闯</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">168</span>
+    <span class="aplayer-list-title">孤</span>
+    <span class="aplayer-list-author">蔡照</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">169</span>
+    <span class="aplayer-list-title">樱花东街 甲2号</span>
+    <span class="aplayer-list-author">奥博</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">170</span>
+    <span class="aplayer-list-title">城市【DEMO】&nbsp;&nbsp;2013</span>
+    <span class="aplayer-list-author">一三</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">171</span>
+    <span class="aplayer-list-title">女儿情</span>
+    <span class="aplayer-list-author">万晓利</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">172</span>
+    <span class="aplayer-list-title">旅行的意义</span>
+    <span class="aplayer-list-author">陈绮贞</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">173</span>
+    <span class="aplayer-list-title">离开（Demo）</span>
+    <span class="aplayer-list-author">陈旸</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">174</span>
+    <span class="aplayer-list-title">一个人一座城</span>
+    <span class="aplayer-list-author">曹寅</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">175</span>
+    <span class="aplayer-list-title">第一次遇见你的时候</span>
+    <span class="aplayer-list-author">谢雨维</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">176</span>
+    <span class="aplayer-list-title">秋酿</span>
+    <span class="aplayer-list-author">房东的猫</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">177</span>
+    <span class="aplayer-list-title">从前慢 (吉他弹唱)</span>
+    <span class="aplayer-list-author">洪尘</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">178</span>
+    <span class="aplayer-list-title">荏苒冬春去</span>
+    <span class="aplayer-list-author">谢春花</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">179</span>
+    <span class="aplayer-list-title">她</span>
+    <span class="aplayer-list-author">王威</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">180</span>
+    <span class="aplayer-list-title">瞬</span>
+    <span class="aplayer-list-author">谢春花</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">181</span>
+    <span class="aplayer-list-title">茶酒伴</span>
+    <span class="aplayer-list-author">谢春花</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">182</span>
+    <span class="aplayer-list-title">借我</span>
+    <span class="aplayer-list-author">谢春花</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">183</span>
+    <span class="aplayer-list-title">切尔西旅馆有没有8310</span>
+    <span class="aplayer-list-author">马頔</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">184</span>
+    <span class="aplayer-list-title">男孩别哭</span>
+    <span class="aplayer-list-author">海龟先生</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">185</span>
+    <span class="aplayer-list-title">他妈的</span>
+    <span class="aplayer-list-author">尧十三</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">186</span>
+    <span class="aplayer-list-title">平淡日子里的刺</span>
+    <span class="aplayer-list-author">宋冬野</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">187</span>
+    <span class="aplayer-list-title">我在太原和谁一起假装悲伤</span>
+    <span class="aplayer-list-author">贰佰</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">188</span>
+    <span class="aplayer-list-title">最后一次看着你</span>
+    <span class="aplayer-list-author">马頔</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">189</span>
+    <span class="aplayer-list-title">二十年前的自己</span>
+    <span class="aplayer-list-author">王胜</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">190</span>
+    <span class="aplayer-list-title">卡比巴拉的海</span>
+    <span class="aplayer-list-author">宋冬野</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">191</span>
+    <span class="aplayer-list-title">龙港秘密</span>
+    <span class="aplayer-list-author">尧十三</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">192</span>
+    <span class="aplayer-list-title">如果来生还能遇见你</span>
+    <span class="aplayer-list-author">郝云</span>
+</li>
+
+<li>
+    <span class="aplayer-list-cur" style="background-color: #b7daff;"></span>
+    <span class="aplayer-list-index">193</span>
+    <span class="aplayer-list-title">孤鸟的歌</span>
+    <span class="aplayer-list-author">马頔</span>
+</li>
+
+    </ol>
+</div>
+<div class="aplayer-body" style="width: 400px;">
+    <div class="aplayer-pic" style="background-image: url(&quot;https://api.i-meto.com/meting/api?server=netease&amp;type=pic&amp;id=3277644162558125&amp;auth=cf62b68e356cdb2abe08583608861bd63ace368f&quot;);background-color: #b7daff;">
+        <div class="aplayer-button aplayer-play"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 16 31"><path d="M15.552 15.168q0.448 0.32 0.448 0.832 0 0.448-0.448 0.768l-13.696 8.512q-0.768 0.512-1.312 0.192t-0.544-1.28v-16.448q0-0.96 0.544-1.28t1.312 0.192z"></path></svg></div>
+    </div>
+    <div class="aplayer-info" style="display: block;">
+        <div class="aplayer-music">
+            <span class="aplayer-title">宝贝 我不再是穿着花裙的小傻X</span>
+            <span class="aplayer-author"> - 莫倪moni</span>
+        </div>
+        <div class="aplayer-controller">
+            <div class="aplayer-bar-wrap">
+                <div class="aplayer-bar">
+                    <div class="aplayer-loaded" style="width: 86.509%;"></div>
+                    <div class="aplayer-played" style="width: 0; background: #b7daff;">
+                        <span class="aplayer-thumb" style="background: #b7daff;">
+                            <span class="aplayer-loading-icon"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 32 32"><path d="M4 16c0-6.6 5.4-12 12-12s12 5.4 12 12c0 1.2-0.8 2-2 2s-2-0.8-2-2c0-4.4-3.6-8-8-8s-8 3.6-8 8 3.6 8 8 8c1.2 0 2 0.8 2 2s-0.8 2-2 2c-6.6 0-12-5.4-12-12z"></path></svg></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="aplayer-time aplayer-time-narrow">
+                <span class="aplayer-time-inner">
+                    <span class="aplayer-ptime">00:00</span> / <span class="aplayer-dtime">03:54</span>
+                </span>
+                <span class="aplayer-icon aplayer-icon-back">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 32 32"><path d="M25.468 6.947c-0.326-0.172-0.724-0.151-1.030 0.057l-6.438 4.38v-3.553c0-0.371-0.205-0.71-0.532-0.884-0.326-0.172-0.724-0.151-1.030 0.057l-12 8.164c-0.274 0.186-0.438 0.496-0.438 0.827s0.164 0.641 0.438 0.827l12 8.168c0.169 0.115 0.365 0.174 0.562 0.174 0.16 0 0.321-0.038 0.468-0.116 0.327-0.173 0.532-0.514 0.532-0.884v-3.556l6.438 4.382c0.169 0.115 0.365 0.174 0.562 0.174 0.16 0 0.321-0.038 0.468-0.116 0.327-0.173 0.532-0.514 0.532-0.884v-16.333c0-0.371-0.205-0.71-0.532-0.884z"></path></svg>
+                </span>
+                <span class="aplayer-icon aplayer-icon-play">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 16 31"><path d="M15.552 15.168q0.448 0.32 0.448 0.832 0 0.448-0.448 0.768l-13.696 8.512q-0.768 0.512-1.312 0.192t-0.544-1.28v-16.448q0-0.96 0.544-1.28t1.312 0.192z"></path></svg>
+                </span>
+                <span class="aplayer-icon aplayer-icon-forward">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 32 32"><path d="M25.468 6.947c-0.326-0.172-0.724-0.151-1.030 0.057l-6.438 4.38v-3.553c0-0.371-0.205-0.71-0.532-0.884-0.326-0.172-0.724-0.151-1.030 0.057l-12 8.164c-0.274 0.186-0.438 0.496-0.438 0.827s0.164 0.641 0.438 0.827l12 8.168c0.169 0.115 0.365 0.174 0.562 0.174 0.16 0 0.321-0.038 0.468-0.116 0.327-0.173 0.532-0.514 0.532-0.884v-3.556l6.438 4.382c0.169 0.115 0.365 0.174 0.562 0.174 0.16 0 0.321-0.038 0.468-0.116 0.327-0.173 0.532-0.514 0.532-0.884v-16.333c0-0.371-0.205-0.71-0.532-0.884z"></path></svg>
+                </span>
+                <div class="aplayer-volume-wrap">
+                    <button type="button" class="aplayer-icon aplayer-icon-volume-down"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 28 32"><path d="M13.728 6.272v19.456q0 0.448-0.352 0.8t-0.8 0.32-0.8-0.32l-5.952-5.952h-4.672q-0.48 0-0.8-0.352t-0.352-0.8v-6.848q0-0.48 0.352-0.8t0.8-0.352h4.672l5.952-5.952q0.32-0.32 0.8-0.32t0.8 0.32 0.352 0.8zM20.576 16q0 1.344-0.768 2.528t-2.016 1.664q-0.16 0.096-0.448 0.096-0.448 0-0.8-0.32t-0.32-0.832q0-0.384 0.192-0.64t0.544-0.448 0.608-0.384 0.512-0.64 0.192-1.024-0.192-1.024-0.512-0.64-0.608-0.384-0.544-0.448-0.192-0.64q0-0.48 0.32-0.832t0.8-0.32q0.288 0 0.448 0.096 1.248 0.48 2.016 1.664t0.768 2.528z"></path></svg></button>
+                    <div class="aplayer-volume-bar-wrap">
+                        <div class="aplayer-volume-bar">
+                            <div class="aplayer-volume" style="height: 70%; background: rgb(183, 218, 255);"></div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="aplayer-icon aplayer-icon-order">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 32 32"><path d="M22.667 4l7 6-7 6 7 6-7 6v-4h-3.653l-3.76-3.76 2.827-2.827 2.587 2.587h2v-8h-2l-12 12h-6v-4h4.347l12-12h3.653v-4zM2.667 8h6l3.76 3.76-2.827 2.827-2.587-2.587h-4.347v-4z"></path></svg>
+                </button>
+                <button type="button" class="aplayer-icon aplayer-icon-loop">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 29 32"><path d="M9.333 9.333h13.333v4l5.333-5.333-5.333-5.333v4h-16v8h2.667v-5.333zM22.667 22.667h-13.333v-4l-5.333 5.333 5.333 5.333v-4h16v-8h-2.667v5.333z"></path></svg>
+                </button>
+                <button type="button" class="aplayer-icon aplayer-icon-menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 22 32"><path d="M20.8 14.4q0.704 0 1.152 0.48t0.448 1.12-0.48 1.12-1.12 0.48h-19.2q-0.64 0-1.12-0.48t-0.48-1.12 0.448-1.12 1.152-0.48h19.2zM1.6 11.2q-0.64 0-1.12-0.48t-0.48-1.12 0.448-1.12 1.152-0.48h19.2q0.704 0 1.152 0.48t0.448 1.12-0.48 1.12-1.12 0.48h-19.2zM20.8 20.8q0.704 0 1.152 0.48t0.448 1.12-0.48 1.12-1.12 0.48h-19.2q-0.64 0-1.12-0.48t-0.48-1.12 0.448-1.12 1.152-0.48h19.2z"></path></svg>
+                </button>
+                <button type="button" class="aplayer-icon aplayer-icon-lrc">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 32 32"><path d="M26.667 5.333h-21.333c-0 0-0.001 0-0.001 0-1.472 0-2.666 1.194-2.666 2.666 0 0 0 0.001 0 0.001v-0 16c0 0 0 0.001 0 0.001 0 1.472 1.194 2.666 2.666 2.666 0 0 0.001 0 0.001 0h21.333c0 0 0.001 0 0.001 0 1.472 0 2.666-1.194 2.666-2.666 0-0 0-0.001 0-0.001v0-16c0-0 0-0.001 0-0.001 0-1.472-1.194-2.666-2.666-2.666-0 0-0.001 0-0.001 0h0zM5.333 16h5.333v2.667h-5.333v-2.667zM18.667 24h-13.333v-2.667h13.333v2.667zM26.667 24h-5.333v-2.667h5.333v2.667zM26.667 18.667h-13.333v-2.667h13.333v2.667z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="aplayer-notice"></div>
+    <div class="aplayer-miniswitcher"><button class="aplayer-icon"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 32 32"><path d="M22 16l-10.105-10.6-1.895 1.987 8.211 8.613-8.211 8.612 1.895 1.988 8.211-8.613z"></path></svg></button></div>
+</div>
+<div class="aplayer-lrc">
+    <div class="aplayer-lrc-contents" style="transform: translateY(0); -webkit-transform: translateY(0);"></div>
+</div>
+</div></meting-js>
+
+
+<script type="text/javascript">
+/*加一只小猫咪*/
+
+$("#main").append('<div class="back-to-top cd-top faa-float animated cd-is-visible" style="top: -999px;"></div>')
+//scroll 事件适用于所有可滚动的元素和 window 对象（浏览器窗口）。
+$(window).scroll(function() {
+	var scroHei = $(window).scrollTop(); //滚动的高度
+	if (scroHei > 500) {
+		$('.back-to-top').css('top', '-200px');
+	} else {
+		$('.back-to-top').css('top', '-999px');
+	}
+})
+/*点击返回顶部*/
+$('.back-to-top').click(function() {
+$('body,html').animate({
+	scrollTop: 0
+}, 400);
+})
+
+</script>
+
+ <script>
+            window.onload = function() {
+                var labels = document.getElementsByClassName('11no-navbar');
+                for (var i = 0; i < labels.length; i++) {
+                    disableSelection(labels[i]);
+                }
+            };
+            function disableSelection(element) {
+                if (typeof element.onselectstart != 'undefined') {
+                    element.onselectstart = function() { return false; };
+                } else if (typeof element.style.MozUserSelect != 'undefined') {
+                    element.style.MozUserSelect = 'none';
+                } else {
+                    element.onmousedown = function() { return false; };
+                }
+            }
+</script>
+
+    </div>
+
+    <input type="hidden" id="antiforgery_token" value="CfDJ8M-opqJn5c1MsCC_BxLIULlKCd2eMVfCKoaVlDIu3FhVFjj5rVbJMb4IKdBTb0hDdda9iBTlRLemTGsN50fSV8GJ6P35BQ2cQuJNuBH1ma8z_YDDhyYzPkYvjd-LORHqYEfiLfVjJ-k9uxzX6TYrm3k">
+    <script async="" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/js"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    var kv = getGACustom();
+    if (kv) {
+        gtag('set', kv);
+    }
+    gtag('config', 'UA-476124-1');
+</script>
+<script defer="" src="./性能测试必备知识（6）- 如何查看“CPU 上下文切换” - 小菠萝测试笔记 - 博客园_files/hm.js.下载"></script>
+
+<script type="text/javascript">
+    window.cnblogsConfig = {
+        info: {
+            name: '小菠萝测试笔记', // 用户名
+            startDate: '2019-12-17', // 入园时间，年-月-日。入园时间查看方法：鼠标停留园龄时间上，会显示入园时间
+            avatar: 'https://files.cnblogs.com/files/poloyy/touxianga.bmp', // 用户头像
+            blogIcon:'https://files.cnblogs.com/files/poloyy/polo.bmp'
+        },
+        sidebar: { // 列表数据 ['导航名称', '链接', 'icon']
+            navList: [
+                    ['新随笔', 'https://i-beta.cnblogs.com/posts/edit'],
+                    ['QQ：837493986', '','icon-logo_QQ'],
+                    ['WX：FJYpolo', '','icon-logo-wechat'],
+                    ['扣扣q：789930609', '','icon-group_fill']
+            ],
+            infoBackground: 'https://files.cnblogs.com/files/poloyy/menu.bmp',
+        },
+        banner: {
+            // 主页头图
+            home: {
+                background: [
+                    "https://files-cdn.cnblogs.com/files/poloyy/back.bmp",
+                ],
+                title: [
+                    '每一个不曾起舞的日子，都是对生命的辜负。',
+                    "未来的你，会感谢今天仍在努力奋斗的你"
+                ]
+                
+            },
+            // 文章页头图
+            article: {
+                background: [
+                "https://files.cnblogs.com/files/poloyy/beijing.bmp",
+                "https://files.cnblogs.com/files/poloyy/beijing4.bmp"
+                ],
+            },
+        },
+        // 加载loading
+        loading: {
+            rebound: {
+                tension: 16,
+            },
+            spinner: {
+                id: 'spinner',
+                radius: 90,
+            }
+        },
+        // 顶部进度条
+        progressBar: {
+            color   : '#77b6ff',
+        },
+        // 页面标签
+        title: {
+            onblur: '(oﾟvﾟ)ノ Hi',//失去焦点标签文字
+            onblurTime: 500,//失去焦点变化延时
+            focus: '(*´∇｀*) 欢迎回来！',//获取焦点标签文字
+            focusTime: 1000,//获取焦点变化延时
+        },
+        //页脚
+        footer: {
+            style: 2,
+            text: {
+                left: '好好学习',
+                right: '天天向上',
+                iconFont: {
+                    icon:  "icon-xl",
+                    color: "red",
+                    fontSize: "16px"
+                }
+            },
+        },
+        // 页脚友情链接
+        links: {
+            footer: [
+                ["lyshark blog", 'https://www.cnblogs.com/LyShark/'],
+                ["申请坑位", 'https://msg.cnblogs.com/send/BNDong'],
+                ["申请坑位", 'https://msg.cnblogs.com/send/BNDong'],
+            ],
+        },
+        //右下角菜单
+        rtMenu: {
+            reward: {
+                wechatpay: 'https://files.cnblogs.com/files/poloyy/weixin.bmp',
+                alipay: 'https://files.cnblogs.com/files/poloyy/zhifu.bmp'
+            },
+            downScrollDom: '#blog_post_info_block',
+        },
+        //日夜切换
+        switchDayNight: {
+            enable: false
+        },
+        //主页banner动效
+        animate: {
+            homeBanner: {
+            enable: true,
+            options: {
+                radius: 15,
+            }
+            },
+            articleBanner: {
+                enable: true,
+            },
+            background: {
+                enable: true,
+            },
+        },
+        //代码渲染类型
+        code: {
+            type: 'hljs',
+            options: {
+                hljs: {
+                    theme:'atom-one-dark'
+                },
+                maxHeight: '120vh',
+                line: true,
+                macStyle: false,
+            },
+        },
+        //关于博主
+        articleSuffix: {
+            aboutHtml: "阿里高级测开工程师 - 让我装回杯",
+        },
+        //控制台输出
+        consoleList: [
+            ['BNDong CNBlogs', 'https://www.cnblogs.com/bndong'],
+            ['BNDong GitHub', 'https://github.com/BNDong'],
+            ['BNDong Email', 'dbuo@foxmail.com'],
+        ],
+        cnzz: "1280075573",
+    }
+    </script><script type="text/javascript">getFollowStatus('bfd58f0a-1e58-4ac0-e56e-08d77884eb28');</script><canvas id="bgCanvas" width="1248" height="646" style="display: block; position: fixed; margin: 0px; padding: 0px; border: 0px; outline: 0px; left: 0px; top: 0px; width: 100%; height: 100%; z-index: -1;"></canvas></body></html>

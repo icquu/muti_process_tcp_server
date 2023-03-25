@@ -1,0 +1,267 @@
+SHELL实现自动化运维
+1、自动化批量系统初始化程序(update，软件安装，时区设置，安全策略)
+2、自动化批量软件部署程序(LAMP,LNMP,Tomcat,LVS,Nginx)
+3、管理应用程序(KVM,集群管理扩容)
+4、日志分析处理程序(PV,UV,200,!200,TOP 100,grep/awk)
+5、自动化备份恢复程序(MySQL完全备份/增量 + Crond)
+6、自动化管理程序(批量远程修改密码，软件升级，配置更新)
+7、自动化信息采集及监控程序(收集系统/应用状态信息，CPU,Mem,Disk,Net,TCP State，Apache,MySQL)
+ss -an | head -n1 && ss -an | grep :22
+8、自动化扩容(增加云主机——>部署应用)
+zabbix监控 + 预处理脚本
+
+#!/usr/bin/bash
+ping -c1 192.168.197.1 &>/dev/null && echo OK || echo FAIL
+shell中直接写python代码
+/usr/bin/python <<-EOF
+print "hello world"
+print "hello world"
+print "hello world"
+EOF
+echo "end"
+
+子shell重执行
+./t.sh
+bash t.sh
+
+当前shell中执行
+. t.sh
+source t.sh
+------------------------------
+BASH SHELL
+1、SHELL特性
+2、shell变量
+3、shell条件测试
+4、shell数值运算
+5、流控、循环
+if
+case
+for
+while
+until
+break
+continue
+exit
+shift
+array
+function
+
+6、企业项目
+用户的配置
+.bash_history
+.bash_logout
+.bash_profile
+.bashrc
+公共的配置
+/etc/profile
+/etc/bashrc
+跳过别名
+\cp
+unalias cp
+临时定义别名
+alias wh=`date`
+
+^a ^e ^w ^u ^l ^s ^q ^y ^d
+& nohup ^c ^z bg %1 fg %1 kill %3 screen tmux
+输入输出重定向0,1,2 > >> 2> 2>> 2>&1 &>   cat < /etc/hosts  cat <<EOF cat >file1 <<EOF
+管道|tee
+date | tee date.txt
+tee不截流
+date | tee -a date.txt 追加
+
+shell通配符(元字符)
+* 匹配任意多个字符 和正则表达式中的意义不同
+? 匹配任意一个字符 和正则表达式中的意义不同
+[] 匹配括号中的任意一个字符
+() 在子shell中执行
+{} 集合
+\ 转义，让元字符回归本意
+^ 取反
+
+(umask 0077;touch a.txt) 不改变当前shell的设置
+
+echo输出带有颜色的文本
+echo -e "\e[1;31m192.168.197.128\e[0m"
+echo -e "\e[1;31m\e[1;43m192.168.197.128\e[0m"
+
+shell变量
+type -a <filename> 查看文件类型
+
+交互式脚本必用的命令 read
+-------------
+#!/bin/bash
+
+read ip
+read -p "please input a ip: " ip
+echo -e "e\[1;31m $ip e\[0m"
+-------------
+
+位置变量
+$0 $1 $2 $3
+
+脚本中的变量引用
+如果./variables.sh定义了几个变量
+在execute.sh中想要使用这几个变量，可以这样做：
+-------------
+#!/bin/bash
+. ./variables.sh
+echo $...
+echo $...
+-------------
+
+echo ${ip11}
+echo ${#ip11}
+
+上一个后台进程PID
+echo $!
+echo "所有参数是：$*"
+echo "所有参数是：$@"
+echo "参数的个数是：$#"
+echo "当前进程的PID是：$$"
+
+-eq 等于
+-gt 大于
+-ge 大于等于
+-lt 小于
+-le 小于等于
+-f  是否是一个文件
+-d  是否是一个目录
+
+env查看系统中定义好的环境变量
+
+命令替换的赋值方式
+date_now=$(date +%F)
+date_now=`date +%F`
+
+read -t 5 -p "" ip
+read -n 2 -p "" name
+read ip1 ip2 ip3 ip4
+
+整数运算
+expr 1 + 2
+
+$((1+2))
+
+$[5+2]
+
+推荐：
+let sum=2+3
+let i++
+
+小数计算：
+echo "2*4" |bc
+echo "scale=2;6/4" | bc
+awk 'BEGIN{print 1/2}'
+echo "print 5.0/2" |python
+
+变量内容的删除和替换
+删除
+url=www.sina.com
+变量的长度
+echo ${#url}
+从前往后删除
+echo ${url#www.}
+echo ${url#www.si}
+echo ${url}
+
+最短匹配
+echo ${url#*si}
+最长匹配
+echo ${url##*.}
+
+从后往前删除
+echo ${url%m.cn}
+echo ${url%.*}
+echo ${url%%.*}
+
+变量的索引和切片
+echo ${url:0:5}
+echo ${url:5:5}
+echo ${url:5}
+
+内容的替换
+echo ${url/sina/baidu}
+echo ${url//n/N}
+
+变量的替换
+echo $var
+如果var没有定义过，会被赋值为aaaaaa，否则不会被重新赋值。
+echo ${var-aaaaaa}
+
+如果var没有定义过或为空值，会被赋值为aaaaaa，否则不会被重新赋值。
+
+echo ${var:-aaaaaa}
+
+
+while true
+do
+	if [[ $num =~ ^[0-9]+$ ]]; then
+		break
+	else
+		read -p "不是数字，请重新输入数值：" num
+	fi
+done
+
+vi小技巧：
+shift+v 行模式
+shift+> 缩进
+
+-n 长度不是0
+-z 长度是0
+
+man test 查看条件测试的帮助
+---------------------------
+
+再熟悉的工作，冷冷的离开2个月，就会明显的生疏，所以，不管是什么工作，哪怕是新的工作，都不足为惧，因为，你自以为需要数十年积累的工作，仅仅2个月就能变成生疏的工作，所以，学习新的东西其实根本没有什么困难，不要给自己设置障碍。YES，有利于达成目的的态度，会带来极大的助力。这个态度会带来自信，稳定和持久的活力。
+
+高标准，高需求，
+低标准，低需求，
+足够简捷，又能达到目的的方式是最好的方式。
+
+技术，语言，都是为了达成目的的工具，just a tool
+
+学习的目的：分数，附带有益与生活
+后学习目的：生活，不考虑分数
+-----------------------------------------
+case $os_version in
+	7.1)
+		echo 7;;
+	8.1)
+		echo 8;;
+esac
+
+exec 6<> /file1 指定文件描述符打开指定文件
+echo "1111" >> /proc/$$/fd/6 通过文件描述符修改该文件
+
+exec 6<&- 关闭当前进程的文件描述符对应的文件
+
+| 匿名管道 同一个进程
+mkfifo 命名管道 不同的进程
+----------------------------------
+shell的多进程控制
+
+#同时运行5个后台任务
+thread=5
+tmp_fifofile=/tmp/$$.fifo
+
+mkfifo $tmp_fifofile
+exec 8<> $tmp_fifofile
+rm -f $tmp_filofile
+
+for i in $(seq $thread);do
+	echo >&8
+done
+
+for i in {1..5};do
+read -u 8 
+	{
+		echo $i;
+		sleep 1;
+		echo >&8
+	}&
+
+done
+
+ssh $ip "echo $pass |passwd --stdin root" 非交互方式修改密码
+
+

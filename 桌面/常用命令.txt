@@ -1,0 +1,47 @@
+# 初始化安装
+yum install deltarpm -y
+yum install wget -y
+
+# 设置端口映射
+-A PREROUTING -p tcp -m tcp --dport 27017 -j DNAT --to-destination 172.16.41.26:27017
+-A POSTROUTING -o eno1 -j SNAT --to-source 172.16.41.206
+
+-A PREROUTING -p tcp -m tcp --dport 8086 -j DNAT --to-destination 192.168.1.175:8086
+-A POSTROUTING -s 192.168.1.0/24 -j SNAT --to-source 192.168.1.230
+
+# MySQL二进制日志查看
+mysqlbinlog --base64-output=decode-rows -v -v binlog
+
+# 清除操作记录
+cat /dev/null > .mysql_history && cat /dev/null > .bash_history &&cat /dev/null > .bash_history && history -c
+
+# MongoDB导入json文件
+/home/mongodb/bin/mongoimport -d hjlog -c log_coinex --file ~/coinlogchannel_backup1548404446470529234.json --type json --jsonArray --host 192.168.1.91 --port 3017 -u root --password fuck\!\!\!1whatareyoudoing\!\@\# --authenticationDatabase admin
+
+# MongoDB导出json文件
+mongoexport -d hjlog -c log_coinex --out ~/log_coinex.json --jsonArray --pretty --host 192.168.56.236 --port 27017 -u admin --password bQ2zgYimzsI5Ss8K --authenticationDatabase admin
+
+# MongoDB登录XX
+mongo -u admin --password bQ2zgYimzsI5Ss8K --authenticationDatabase admin --host 192.168.56.236 --port 27017
+
+# MongoDB备份命令
+mongodump --host=192.168.56.237 --port=27017 --authenticationDatabase=admin --out=/root/2019-02-20 --oplog --gzip --username=admin --password=bQ2zgYimzsI5Ss8K
+
+# Percona MongoDB的热备份命令，要注意备份文件夹的权限
+db.runCommand({createBackup: 1, backupDir: "/home/hotbackup/"})
+
+# MongoDB恢复备份命令
+mongorestore --dir=/root/mbak --gzip --oplogFile=<filename> --oplogReplay --drop -h 192.168.1.240
+mongorestore --dir=/root/mbak --gzip --oplogReplay --drop -h 192.168.1.240
+
+#influxdb命令导出数据
+influx --precision rfc3339 -database 'dbmis' -execute 'select * from db_player_game_record' -format 'csv' > db_player_game_record.csv
+influx --precision rfc3339 -database 'dbmis' -execute 'select * from rp_3d.C_S_T_1d_player' -format 'csv' > rp_3d_C_S_T_1d_player.csv
+influx --precision rfc3339 -database 'dbmis' -execute 'select * from rp_30d.C_S_T_1d_platform' -format 'csv' > rp_30d_C_S_T_1d_platform.csv
+influx --precision rfc3339 -database 'dbmis' -execute 'select * from rp_30d.C_S_T_1d_games' -format 'csv' > rp_30d_C_S_T_1d_games.csv
+
+#死锁检测
+pt-deadlock-logger --user=root --ask-pass --database=dbmis --run-time=1d --log=/root/deadlock.log --daemonize
+
+#查看可用连接数
+db.serverStatus().connections

@@ -1,0 +1,135 @@
+Socket网络编程进阶与实战
+
+https://www.youtube.com/watch?v=gwkFtMbyhz4&list=PLJUyBVA38kfcIbFsoLMYDOwzvsckb0r5A
+
+ByteBuffer NIO Channel 
+数据分片 Socket运用
+消息粘包 消息丢包 性能调试 性能分析 并发封装
+桥接技术 内存复用
+
+案例实战：群聊天室 文件快传 即时语音等
+
+172.31.46.2 monitor 80 后台专用
+172.31.38.43 monitor 前台
+172.31.44.219 non-monitor 90 前台
+172.31.42.59 monitor 99
+
+binlog.000352
+625456780
+
+pidstat -u -t -p 3484 1 10|grep -v '-'|awk "{if($6>80){mysql -uroot -pDyR10ucTlC1uvS3- -e""select 1"" $5}}"
+foreign_key_checks
+
+pidstat -u -t -p 3484 1 2|grep Average|awk '{if($4>3484 && $5>50){print $4}}'
+
+select * from performance_schema.threads where thread_os_id in (15622)
+
+
+mysqlbinlog -vvv --start-datetime='2022-02-23 15:17:30' --stop-datetime='2022-02-23 15:18:30' binlog.000389 > ~/result0.log
+
+
+安装netdata:
+bash <(curl -Ss https://my-netdata.io/kickstart.sh) all
+
+create user 'netdata'@'localhost';
+grant usage, replication client on *.* to 'netdata'@'localhost';
+flush privileges;
+
+
+271583809054195DT7JY5D8JI7
+
+
+生蚝 贝干 虾米 鲈鱼 泥鳅 田螺 牛排 羊骨 羊肉 猪肝 驴肉 口蘑 上海青 魔芋 红薯 芥兰 苹果 梨 柠檬 猕猴桃 
+
+
+mysqladmin -uroot -p'DyR10ucTlC1uvS3-' --socket=/data/mysql/mysql.sock extended-status -i1|awk 'BEGIN{local_switch=0;print "QPS   Commit Rollback   TPS    Threads_con Threads_run \n------------------------------------------------------- "}
+
+     $2 ~ /Queries$/            {q=$4-lq;lq=$4;}
+
+     $2 ~ /Com_commit$/         {c=$4-lc;lc=$4;}
+
+     $2 ~ /Com_rollback$/       {r=$4-lr;lr=$4;}
+
+     $2 ~ /Threads_connected$/  {tc=$4;}
+
+     $2 ~ /Threads_running$/    {tr=$4;
+
+        if(local_switch==0) 
+
+                {local_switch=1; count=0}
+
+        else {
+
+                if(count>10) 
+
+                        {count=0;print "------------------------------------------------------- \nQPS   Commit Rollback   TPS    Threads_con Threads_run \n------------------------------------------------------- ";}
+
+                else{ 
+
+                        count+=1;
+
+                        printf "%-6d %-8d %-7d %-8d %-10d %d \n", q,c,r,c+r,tc,tr;
+
+                }
+
+        }
+
+}'
+
+
+
+SELECT THREAD_ID AS TID, SUBSTRING_INDEX(NAME, '/', -2) AS THREAD_NAME, IF(TYPE = 'BACKGROUND', '*', ") AS B, IFNULL(PROCESSLIST_ID, ") AS PID FROM performance_schema.threads;
+
+SELECT THREAD_ID AS TID, SUBSTRING_INDEX(NAME, '/', -2) AS THREAD_NAME, IFNULL(PROCESSLIST_ID, ") AS PID,processlist_user, processlist_state,PROCESSLIST_INFO FROM performance_schema.threads where type = 'FOREGROUND';
+
+select * from sys.session;
+select thd_id,conn_id,user,db,command,state,time,current_statement,statement_latency,lock_latency,rows_examined from sys.session;
+
+
+select connection_id(),ps_thread_id(connection_id()),ps_current_thread_id();
+select thread_id,name,type,thread_os_id,processlist_state,processlist_info,connection_type,processlist_command from performance_schema.threads where type = 'foreground';
+
+
+Instruments  在performance中可以作为承载信息的类型，其中包含 error , idle , memory , stage , statement, transactio, wait 在这些类型中，可以根据时间来划分类型，memory  ，statement ,  wait  是instruments 中重点的三项， 包含了数据库中内存的使用项目， 语句的使用项目，以及系统运行中的等待项目。
+
+但需要注意的是，如果想针对系统性能有优化的情况下，可以针对这些信息进行更详细的收集而不是都打开，都打开的情况下 会收集 1200 - 1300左右的信息，对系统的影响比较大。
+
+select name,enabled from setup_instruments where name like 'wait%';
+
+
+执行最多的sql
+select SCHEMA_NAME,DIGEST_TEXT,COUNT_STAR,sys.format_time(SUM_TIMER_WAIT) as sum_time,sys.format_time(MIN_TIMER_WAIT) as min_time,sys.format_time(AVG_TIMER_WAIT) as avg_time,sys.format_time(MAX_TIMER_WAIT) as max_time,sys.format_time(SUM_LOCK_TIME) as sum_lock_time,SUM_ROWS_AFFECTED,SUM_ROWS_SENT,SUM_ROWS_EXAMINED from events_statements_summary_by_digest where SCHEMA_NAME is not null order by COUNT_STAR desc limit 10\G
+
+执行最长的sql
+---------------------------------------------------------------------------------------------------
+When innodb_dedicated_server is enabled, InnoDB automatically configures the following variables:
+
+innodb_buffer_pool_size
+
+innodb_log_file_size
+
+innodb_log_files_in_group (as of MySQL 8.0.14)
+
+innodb_flush_method
+
+
+SELECT COUNT ( * ) AS ? FROM ` ... ` ON `lc2` . `d_value` = `a`
+
+SELECT COUNT ( * ) AS ? FROM ` ... me` LIKE ? OR `g` . `d_id` = ?
+
+SELECT `a` . * , `a` . `d_cont ...  . `member_order` AS `a` INNER
+
+SELECT COUNT ( * ) AS ? FROM ( ...  . `d_reason_type` WHERE `a` .
+
+SELECT COUNT ( * ) AS ? FROM ` ... _id` = `a` . `d_member_id` AND
+
+SELECT `g` . `d_id` , `g` . `d ... us` = ? GROUP BY `d_game_id` ,
+
+SELECT `a` . * , `a` . `d_cont ... JOIN ( SELECT `m` . * , `ag` .
+
+SELECT TIME , SYSTEM_USER FROM ... Info` NOT LIKE ? ORDER BY TIME
+
+
+
+log_queries_not_using_indexes =1
+#log_throttle_queries_not_using_indexes = 60

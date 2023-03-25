@@ -1,0 +1,22 @@
+learning hardly for days
+
+收集C和shell脚本功能代码，
+expect交互式脚本
+pv和progress显示和控制命令执行进度。
+
+重复浏览rhce的中高级部分章节
+kernel编译，模块编译，单模块编译
+src.rpm包的使用
+制作rpm包
+
+英文网站，质量不错
+https://www.tecmint.com
+
+鸟哥参考：
+https://zq99299.github.io/linux-tutorial/tutorial-basis/22/04.html
+http://cn.linux.vbird.org/linux_basic/0520rpm_and_srpm_3.php
+http://c.biancheng.net/view/823.html
+https://wizardforcel.gitbooks.io/vbird-linux-basic-4e/content/210.html
+
+Linux内核源码：
+https://www.kernel.org/

@@ -1,0 +1,19 @@
+一般有三种Linux发行版的包管理，常用的是4种，还有一种是arch派系，包管理器分别是：yum(cnf),apt(aptitu...),zypper(yast),pacman
+管理一种Linux发行版就是掌握管理这种Linux系统的工具，它们虽有不同，但大同小异。
+
+opensuse的安装包后缀也是rpm，但和rhel的包还是有所不同的，并不通用，如果需要用rhel的rpm包，需要修改和转换。
+
+
+localhost:/var/log # netstat
+If 'netstat' is not a typo you can use command-not-found to lookup the package that contains it, like this:
+    cnf netstat
+localhost:/var/log # cnf netstat
+                         
+The program 'netstat' can be found in following packages:
+  * net-tools-deprecated [ path: /bin/netstat, repository: zypp (repo-oss) ]
+  * net-tools-deprecated [ path: /usr/bin/netstat, repository: zypp (repo-oss) ]
+
+Try installing with:
+    zypper install net-tools-deprecated
+
+localhost:/var/log # zypper install net-tools-deprecated
