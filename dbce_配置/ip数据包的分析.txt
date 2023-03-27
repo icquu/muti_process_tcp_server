@@ -42,6 +42,29 @@ D-SACK介绍
 案例：启用SACK机制，可能导致某些网络设备工作不正常，会对包的seq号进行更改的网络设备，如果不能同步的更改包中SACK信息，会导致出现网络问题。
 正常的Win或Linux服务器收到错误的SACK后，会忽略SACK选项，继续正常工作。而有的服务器收到错误的SACK后，无法正常处理，导致会话卡死。
 
+TCP拥塞控制
+虽然算法的名字叫做慢启动，但是cwnd增长的速度却一点都不慢，在几个RTT后，cwnd即可增长为16个SMSS，再经过几个RTT后，cwnd即可增长到网络拥塞点
+在慢启动算法种，拥塞窗口大小按指数规律增大，直至慢启动阈值(slow start threshold,ssthresh),开始使用拥塞避免算法
+默认情况下，ssthresh的大小为16个SMSS
+
+拥塞避免算法
+每经过一个RTT，则将cwnd增加约一个MSS大小
+新cwnd=cwnd+SMSS*SMSS/cwnd
+
+慢启动算法使cwnd呈指数级增长，快速翻倍，用于连接建立后的快速进入高速发送速率
+拥塞避免算法使cwnd呈线性增长，缓慢增加，用于在达到一定发送速率后，尽可能将这个高速速率保持足够长的时间
+慢启动与拥塞避免的切换点是ssthresh，cwnd低于阈值时，使用慢启动；cwnd高于阈值时，使用拥塞避免，cwnd等于阈值时，两种算法都可以使用
+ssthresh也是动态调整的
+当网络种出现丢包时，新的ssthresh将被设置为当前cwnd的一半，但不会低于2*SMSS
+当网络出现超时重传时，说明网络情况较差，即将ssthresh减为当前cwnd的一半，同时将当前cwnd“打回原型”，粗暴的减小为1个SMSS大小，然后重新进入慢启动状态。
+
+TCP拥塞控制有多种算法：
+基于丢包的算法：
+Reno, NewReno
+基于延迟的拥塞控制算法：
+Vegas, FAST, Westwood, Westwood+
+
+
 ip分片
 
 标识：identification
