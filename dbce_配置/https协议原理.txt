@@ -8,3 +8,12 @@ https协议原理
 双向加密的道理也是一样的，比如有客户端访问服务器，服务器要求客户端提供签名公钥，服务器可以通过验签，核对是否是自己授权的客户端进行的访问，比如，解密后的公钥包含特定的信息。核对无误才进行通讯。
 
 比如银行使用的U盾，安装的客户端证书，就是属于这种应用。属于双向认证。
+
+ssl常用命令
+您可以使用以下命令来查看证书信息：openssl x509 -in cert.pem -noout -text。其中，cert.pem是您要查看的证书文件名。
+
+您可以使用以下命令来签名：openssl dgst -sha256 -sign private.pem -out signature.bin data.txt。其中，private.pem是您的私钥文件名，signature.bin是签名后的文件名，data.txt是要签名的数据文件名。
+
+公钥不支持解密，只能用于加密。
+
+使用OpenSSL进行解密的命令是：openssl enc -d -aes256 -in encryptedfile -out decryptedfile。其中，encryptedfile是要解密的文件，decryptedfile是解密后的文件。
