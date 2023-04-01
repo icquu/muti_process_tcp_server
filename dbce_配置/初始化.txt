@@ -131,6 +131,7 @@ thread_handling = pool-of-threads          # one-thread-per-connection
 thread_pool_size = 32
 thread_pool_oversubscribe = 16
 thread_pool_max_threads = 5120
+thread_pool_stall_limit = 500
 skip_name_resolve = 1
 back_log = 1024
 max_connect_errors = 1000000
