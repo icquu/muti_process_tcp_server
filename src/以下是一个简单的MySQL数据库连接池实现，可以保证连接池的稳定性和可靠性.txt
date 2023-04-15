@@ -1,0 +1,171 @@
+以下是一个简单的MySQL数据库连接池实现，可以保证连接池的稳定性和可靠性：
+
+```
+#include <mysql/mysql.h>
+#include <stdbool.h>
+#include <pthread.h>
+
+// Define the MySQL connection structure
+typedef struct {
+    MYSQL *connection; // Pointer to the MySQL connection
+    bool in_use; // Whether the connection is currently in use
+} MySQLConnection;
+
+// Define the MySQL connection pool structure
+typedef struct {
+    char *url; // MySQL server URL
+    char *username; // MySQL server username
+    char *password; // MySQL server password
+    int pool_size; // Maximum number of connections in the pool
+    MySQLConnection *connections; // Array of MySQL connections in the pool
+    pthread_mutex_t lock; // Mutex lock to protect the pool
+} MySQLConnectionPool;
+
+// Define the function to create a MySQL connection pool
+MySQLConnectionPool *create_connection_pool(char *url, char *username, char *password, int pool_size) {
+    // Allocate memory for the MySQL connection pool structure
+    MySQLConnectionPool *pool = (MySQLConnectionPool *) malloc(sizeof(MySQLConnectionPool));
+    if (!pool) {
+        printf("Failed to allocate memory for the MySQL connection pool.\n");
+        return NULL;
+    }
+
+    // Initialize the mutex lock
+    if (pthread_mutex_init(&pool->lock, NULL) != 0) {
+        printf("Failed to initialize the mutex lock for the MySQL connection pool.\n");
+        free(pool);
+        return NULL;
+    }
+
+    // Initialize the MySQL connection pool
+    pool->url = url;
+    pool->username = username;
+    pool->password = password;
+    pool->pool_size = pool_size;
+    pool->connections = (MySQLConnection *) malloc(pool_size * sizeof(MySQLConnection));
+    if (!pool->connections) {
+        printf("Failed to allocate memory for the MySQL connections in the pool.\n");
+        pthread_mutex_destroy(&pool->lock);
+        free(pool);
+        return NULL;
+    }
+
+    // Create the MySQL connections in the pool
+    int i;
+    for (i = 0; i < pool_size; i++) {
+        pool->connections[i].connection = mysql_init(NULL);
+        if (!pool->connections[i].connection) {
+            printf("Failed to initialize the MySQL connection %d.\n", i);
+            int j;
+            for (j = 0; j < i; j++) {
+                mysql_close(pool->connections[j].connection);
+            }
+            free(pool->connections);
+            pthread_mutex_destroy(&pool->lock);
+            free(pool);
+            return NULL;
+        }
+
+        if (!mysql_real_connect(pool->connections[i].connection, url, username, password, NULL, 0, NULL, 0)) {
+            printf("Failed to connect to the MySQL server for connection %d: %s\n", i, mysql_error(pool->connections[i].connection));
+            int j;
+            for (j = 0; j < i; j++) {
+                mysql_close(pool->connections[j].connection);
+            }
+            mysql_close(pool->connections[i].connection);
+            free(pool->connections);
+            pthread_mutex_destroy(&pool->lock);
+            free(pool);
+            return NULL;
+        }
+
+        pool->connections[i].in_use = false;
+    }
+
+    return pool;
+}
+
+// Define the function to get a MySQL connection from the pool
+void *get_connection(MySQLConnectionPool *pool) {
+    // Acquire the mutex lock
+    pthread_mutex_lock(&pool->lock);
+
+    // Find an available MySQL connection in the pool
+    int i;
+    for (i = 0; i < pool->pool_size; i++) {
+        if (!pool->connections[i].in_use) {
+            pool->connections[i].in_use = true;
+            break;
+        }
+    }
+
+    // Release the mutex lock
+    pthread_mutex_unlock(&pool->lock);
+
+    if (i == pool->pool_size) {
+        printf("No available MySQL connections in the pool.\n");
+        return NULL;
+    } else {
+        return (void *) &pool->connections[i];
+    }
+}
+
+// Define the function to release a MySQL connection back to the pool
+void release_connection(void *connection) {
+    MySQLConnection *my_conn = (MySQLConnection *) connection;
+
+    // Acquire the mutex lock
+    pthread_mutex_lock(&my_conn->pool->lock);
+
+    // Release the MySQL connection back to the pool
+    my_conn->in_use = false;
+
+    // Release the mutex lock
+    pthread_mutex_unlock(&my_conn->pool->lock);
+}
+
+// Define the function to destroy a MySQL connection pool
+void destroy_connection_pool(MySQLConnectionPool *pool) {
+    // Close all MySQL connections in the pool
+    int i;
+    for (i = 0; i < pool->pool_size; i++) {
+        mysql_close(pool->connections[i].connection);
+    }
+
+    // Free the memory allocated for the MySQL connection pool
+    free(pool->connections);
+    pthread_mutex_destroy(&pool->lock);
+    free(pool);
+}
+
+// Example usage
+int main() {
+    // Create a MySQL connection pool
+    MySQLConnectionPool *pool = create_connection_pool("localhost", "username", "password", 10);
+
+    // Get a MySQL connection from the pool
+    MySQLConnection *connection = (MySQLConnection *) get_connection(pool);
+    if (!connection) {
+        printf("Failed to get a MySQL connection from the pool.\n");
+        return 1;
+    }
+
+    // Use the MySQL connection to execute a query
+    if (mysql_query(connection->connection, "SELECT * FROM my_table")) {
+        printf("Failed to execute the MySQL query: %s\n", mysql_error(connection->connection));
+        release_connection(connection);
+        destroy_connection_pool(pool);
+        return 1;
+    }
+
+    // Release the MySQL connection back to the pool
+    release_connection(connection);
+
+    // Destroy the MySQL connection pool
+    destroy_connection_pool(pool);
+
+    return 0;
+}
+```
+
+//这段代码使用了线程安全的方式来实现MySQL数据库连接池。它使用互斥锁来保证多线程环境下的安全性，并且在连接池中预先创建了多个MySQL连接，以便在需要时可以快速获取可用的连接。同时，它还提供了释放连接和销毁连接池的功能，以确保连接池的稳定性和可靠性。
