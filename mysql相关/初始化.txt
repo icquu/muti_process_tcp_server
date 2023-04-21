@@ -95,6 +95,20 @@ max_slowlog_files = 4
 innodb_numa_interleave = ON
 kill_idle_transaction = 10
 
+#担心被垃圾SQL搞爆内存,要求MySQL版本号不低于8.0.28,普通用户受到此限制。
+#没有SUPER、SYSTEM_VARIABLES_ADMIN、SESSION_VARIABLES_ADMIN等权限。
+#假设有个服务器物理内存是96GB，建议考虑做如下分配：
+#选项	设置值
+#innodb_buffer_pool_size	64G
+#global_connection_memory_limit	12G
+#connection_memory_chunk_size	8192
+#connection_memory_limit	96M
+#global_connection_memory_tracking	ON
+
+global_connection_memory_tracking = ON
+connection_memory_chunk_size = 64k	#默认8K
+connection_memory_limit = 32M	#2MB
+
 mysqlx=OFF
 authentication_policy=mysql_native_password
 explicit_defaults_for_timestamp = 1
