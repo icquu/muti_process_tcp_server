@@ -1,0 +1,184 @@
+基于开源应用快速构建HTAP系统
+httpsimysql.com20201231build-htap-system-with-mysql-and-proxysql-and-clickhouse.shtml
+
+利用ProxySQL、MySQL、ClickHouse快速构建HTAP系统
+
+3.1 将ClickHouse配置成为MySQL的从库
+
+登入ClickHouse后，执行下面的命令启用新特性：
+
+<br />    clickhouse :) SET allow_experimental_database_materialize_mysql = 1;
+在ClickHouse中，创建一个复制通道，即可构建一个MySQL复制从库，例如：
+
+<br />    clickhouse :) CREATE DATABASE test ENGINE = MaterializeMySQL('172.24.140.144:3306', 'test', 'repl', 'repl');
+    clickhouse :) use test;
+    clickhouse :) show tables;
+    ┌─name─────┐
+    │ sbtest1  │
+    │ sbtest10 │
+    │ sbtest11 │
+    ...
+    32 rows in set. Elapsed: 0.006 sec.
+首次创建复制通道后，ClickHouse会快速从MySQL主库读取所有数据并应用，可以查看数据复制的进度：
+
+<br />    [root@yejr.run]# cat metadata/sbtest/.metadata
+
+    Version:    2
+    Binlog File:    binlog.001496
+    Executed GTID:  097ee9f2-2ded-11eb-9211-e4434ba52b50:1-952676723
+    Binlog Position:    789663343
+    Data Version:   2
+提醒：在这里，我设置的是主从复制专用账号。相对于普通的主从复制账号，用于ClickHouse从库的账号至少还要加上只读权限，例如：
+
+<br />    [root@yejr.run]> show grants for repl;
+    +--------------------------------------------------------------------------+
+    | Grants for repl@%                                                        |
+    +--------------------------------------------------------------------------+
+    | GRANT RELOAD, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO `repl`@`%` |
+    | GRANT SELECT ON `test`.* TO `repl`@`%`                                   |
+    +--------------------------------------------------------------------------+
+ClickHouse的MaterializeMySQL引擎从MySQL复制数据的速度非常之快，甚至比MySQL原生的从库还要更快，大家可以亲身感受体验下。
+
+接下来，再在ClickHouse中创建一个业务账号，以及一个服务监控账号（用于ProxySQL对后端服务的监控）。 编辑ClickHouse的配置文件 users.xml，增加两个用户：
+
+<br />    <app_user>
+        <password>app_user</password>
+        <networks incl="networks" replace="replace">
+            <ip>::/0</ip>
+        </networks>
+        <profile>default</profile>
+        <quota>default</quota>
+    </app_user>
+    <monitor>
+        <password>monitor</password>
+        <networks incl="networks" replace="replace">
+            <ip>::/0</ip>
+        </networks>
+        <profile>default</profile>
+        <quota>default</quota>
+    </monitor>
+我只设置了简单密码，也没有修改其权限和quota模式，仅演示用，线上生产环境请自行调整以合规。
+
+3.2 配置ProxySQL
+配置mysql_servers表，增加两条记录，并使配置生效：
+
+<br />    proxysql> insert into mysql_servers(hostgroup_id, hostname, port) values('0', '172.24.140.143', '3306');
+    proxysql> insert into mysql_servers(hostgroup_id, hostname, port) values('1', '172.24.140.144', '9004');
+    proxysql> save mysql servers to disk; load mysql servers to run;
+其中，172.24.140.143:3306 是MySQL主库，172.24.140.144:9004是ClickHouse从库，9004端口是ClickHouse里给MySQL客户端连接专用的，可以用MySQL客户端（协议）连接进来执行各种操作。
+
+hostgroup分别为0和1，0用于读写组，1用于只读组。
+
+配置mysql_users表，加入业务账号和监控账号：
+
+<br />    proxysql> select username,password,active from mysql_users;
+    +-----------+----------+--------+
+    | username  | password | active |
+    +-----------+----------+--------+
+    | app_user  | app_user | 1      |
+    | monitor   | monitor  | 1      |
+    +-----------+----------+--------+
+
+    proxysql> save mysql users to disk; load mysql users to runtime;
+配置mysql_query_rules表，这个是关键，用于判断将哪些SQL转发到MySQL主库，哪些转发到ClickHouse：
+
+<br />    proxysql> select rule_id, active, match_pattern,destination_hostgroup from mysql_query_rules;
+    +---------+--------+-------------------------+-----------------------+
+    | rule_id | active | match_pattern           | destination_hostgroup |
+    +---------+--------+-------------------------+-----------------------+
+    | 1       | 1      | ^SELECT.*\+CLICKHOUSE.* | 1                     |
+    +---------+--------+-------------------------+-----------------------+
+
+    proxysql>  save mysql query rules to disk; load mysql query rules to run;
+上述规则的意思是，当SELECT语句中包含 “+CLICKHOUSE” 关键字时，就会自动转发到 ClickHouse 后端去处理，其余的都发送到MySQL后端处理。 例如下面这两条SQL就会分别转发到MySQL和ClickHouse后端：
+
+<br />    #SQL #1
+    [root@yejr.run]> SELECT * FROM sbtest1 WHERE id=1;
+
+    #SQL #2
+    [root@yejr.run]> SELECT /*+CLICKHOUSE*/ * FROM sbtest1 WHERE id=1; 
+第二条SQL利用MySQL的注释语法巧妙地实现规则HINT。
+
+查询 stats_mysql_query_digest 表的结果予以确认：
+
+<br />    proxysql> select hostgroup, schemaname, username, digest, digest_text from stats_mysql_query_digest;
+    +-----------+------------+----------+--------------------+----------------------------------+
+    | hostgroup | schemaname | username | digest             | digest_text                      |
+    +-----------+------------+----------+--------------------+----------------------------------+
+    | 0         | sbtest     | app_user | 0x5662D7CF0442E794 | select * from sbtest1 where id=? |
+    | 1         | sbtest     | app_user | 0x5662D7CF0442E794 | select * from sbtest1 where id=? |
+    +-----------+------------+----------+--------------------+----------------------------------+
+可以看到，两条SQL看起来一样，但分别转发到不同的hostgroup了。
+
+最后配置ProxySQL的监控服务（可选，非必须）：
+
+<br />    proxysql> set mysql-monitor_enabled="true"; 
+    proxysql> set mysql-monitor_username="monitor";
+    proxysql> set mysql-monitor_password="monitor";
+
+    proxysql> save mysql variables to disk; load mysql variables to runtime;
+至此，一个全部基于开源应用的简易HTAP系统就构建好了。
+
+4. 性能对比
+在这里，我选用ClickHouse官方提供的benchmark方案：Star Schema Benchmark。
+
+编译完成后先是利用ssb-dbgen生成测试数据（指定参数 -s 50）：
+
+<br />    ./dbgen -s 50 -T c &
+    ./dbgen -s 50 -T l &
+    ./dbgen -s 50 -T p &
+    ./dbgen -s 50 -T s &
+    ./dbgen -s 50 -T d &
+再创建几个测试库表，自行修改建表的DDL以适应MySQL语法。 而后导入测试数据，最后根据文档并生成 lineorder_flat 表。
+
+<br />    [root@yejr.run]> show table status;
+    +----------------+--------+---------+------------+-----------+----------------+--------------+
+    | Name           | Engine | Version | Row_format | Rows      | Avg_row_length | Data_length  |
+    +----------------+--------+---------+------------+-----------+----------------+--------------+
+    | customer       | InnoDB |      10 | Dynamic    |   1378209 |            120 |    166363136 |
+    | lineorder      | InnoDB |      10 | Dynamic    | 297927870 |            100 |  29871833088 |
+    | lineorder_flat | InnoDB |      10 | Dynamic    | 292584926 |            430 | 125952851968 |
+    | part           | InnoDB |      10 | Dynamic    |   1192880 |            111 |    132792320 |
+    | supplier       | InnoDB |      10 | Dynamic    |     99730 |            110 |     11026432 |
+    +----------------+--------+---------+------------+-----------+----------------+--------------+
+数据全部加载完毕后，再在ClickHouse中创建MaterializeMySQL复制通道：
+
+<br />    clickhouse :) CREATE DATABASE ssb ENGINE = MaterializeMySQL('172.24.140.143:3380', 'ssb', 'repl', 'repl');
+数据量比较大，耐心静待它复制完成即可。
+
+然后连接 ProxySQL，先简单执行大表count(*)，观察耗时的不同：
+
+<br />    #直接执行count(*)，会转发到后端 MySQL 实例
+    [root@yejr.run]> select count(*) from lineorder_flat;
+    +-----------+
+    | count(*)  |
+    +-----------+
+    | 300005811 |
+    +-----------+
+    1 row in set (3 min 2.14 sec)
+
+    #加上HINT规则，会转发到后端 ClickHouse 实例
+    [root@yejr.run]> select /*+CLICKHOUSE*/ count(*) from lineorder_flat;
+    +-----------+
+    | count(*)  |
+    +-----------+
+    | 300005811 |
+    +-----------+
+    1 row in set (5.67 sec)
+光是 count(*) 就差了好多倍。
+
+再选取其中前4个SQL测试，记录的耗时如下：
+
+| Query | MySQL | ClickHouse(从库) | ClickHouse(原生) | 
+| --- | --- | --- | --- |
+| Q1.1 | 308.388684 | 0.149 | 0.107 |
+| Q1.2 | 320.373203 | 0.280 | 0.027|
+| Q1.3 | 279.673361 | 0.346 | 0.030 |
+| Q2.1 | 286.451062 | 1.246 | 0.489 |
+很明显，直接在MySQL上查询的效率实在太低了，而作为从库的MaterializeMySQL和ClickHouse原生的MergeTree表虽然也有一定差距，但相差也没那么大了，还算是很快的。
+
+4. 其他说明
+ClickHouse的MaterializeMySQL中不支持 create like 语法。例如执行 create table db2.a like db1.a，其中db1是要复制到ClickHouse的，而db2是留在MySQL端，即便这样也会导致ClickHouse端复制报错，需要重启才行。
+ClickHouse的MaterializeMySQL中也不支持函数索引。
+偶尔发现ProxySQL的监控模块连接到ClickHouse后，会发送 SET wait_timeout=N 命令，会导致ClickHouse报错，但不影响正常使用。重启ProxySQL，或者重启监控开关都可以解决。
+Enjoy it :)
